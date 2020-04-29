@@ -31,6 +31,10 @@ int main(int argc, char* argv[]) {
             if (arg == "-o") {
                 output = argv[++i];
             }
+            else if (arg == "-h" || arg == "--help") {
+                printUsage();
+                return(0);
+            }
             else {
                 filename = argv[i];
             }
@@ -64,7 +68,7 @@ int main(int argc, char* argv[]) {
     bool isEnd = false;
     bool isError = false;
 
-    // First Pass -> Generate Symbol and Constant Tables, report syntax errors.
+    /*---- First Pass -> Generate Symbol and Constant Tables, report syntax errors. ----*/
     while (getline(src, line) && !isEnd) {
         isEnd = false;
 
@@ -226,21 +230,24 @@ int main(int argc, char* argv[]) {
     lc = 0;
     isEnd = false;
 
-    // Second Pass -> Generate output code and listing.
-    // It doesn't checks for erros, since Step 1 already di.
+    /*---- Second Pass -> Generate output code and listing.          ----*/
+    /*---- It doesn't checks for erros, since Step 1 already did it. ----*/
+    
+    // Go back to start of file
     std::ofstream out;
     out.open(output);
 
     while (getline(src, line) && !isEnd) {
-        lc++;
         isEnd = false;
 
-        // Pre-process line
-        line = std::regex_replace(line, comment, ""); // Remove Comments.
-        line = std::regex_replace(line, whites, " "); // Reduce whitespaces.
-        line = uppercase(line);                       // Uppercase everything.
+        lc++;
 
-        words = split(line, ' ');
+        // Line pre-processing:
+        line = std::regex_replace(line, comment, ""); // Remove Comments
+        line = std::regex_replace(line, whites, " "); // Reduce whitespaces
+        line = uppercase(line);                       // Uppercase all words
+        words = split(line, ' ');                     // Get word vector
+
 
         // for (int i = 0; i < words.size(); i++) {
         //     std::cout << words[i] << " ";
@@ -254,11 +261,12 @@ int main(int argc, char* argv[]) {
 }
 
 static void printUsage() {
-    std::cerr << "Usage: assembler <option(s)> source"
+    std::cerr << "Usage: assembler <option(s)> source\n\n"
               << "Options: -o <destination>"
               << std::endl;
 }
 
+// Prints constructed symbol table
 static void printSTable() {
     std::cout << "Symbol Table:\n";
     
@@ -268,11 +276,12 @@ static void printSTable() {
     std::for_each(sTable.begin(), sTable.end(),
         [](std::pair<std::string, symbolData > element)
         {
-            std::cout << "0x" << std::setw(4) <<  std::hex << element.second.address << ": " << element.first << "\n";
+            std::cout << "0x" << std::setw(3) <<  std::hex << element.second.address << ": " << element.first << "\n";
         });
     std::cout << "\n";
 }
 
+// Converts given string to uppercase
 static std::string uppercase(const std::string& s) {
     std::string upper = s;
     for (int i = 0; i < s.length(); i++) {
@@ -298,7 +307,6 @@ static std::uint16_t htoi(const std::string& hex) {
             intNum += (hex[i] - 0x37)*pow16(len-i-1);
         }
     }
-    std::cout << "\n";
     return intNum;
 }
 
@@ -324,6 +332,7 @@ static std::vector<std::string> split(const std::string& str, char delim) {
     return strings;
 }
 
+// Checks if given string is a valid label name
 static bool isValidLabel(const std::string& s) {
     // Label must start with either '_' or letter.
     if (((s[0] < 'A') || (s[0] > 'Z')) &&  (s[0] != '_')) return false;
@@ -345,6 +354,7 @@ static bool isValidLabel(const std::string& s) {
     return true;
 }
 
+// Checks if given string is a valid mnemonic
 static bool isValidMnemonic(const std::string& s) {
     std::unordered_map<std::string,mnemonicData>::const_iterator it = mTable.find(s);
 
@@ -355,6 +365,7 @@ static bool isValidMnemonic(const std::string& s) {
     return true;
 }
 
+// Checks if given string is a number
 static bool isNumber(const std::string& s) {
     // Should start with '$' if hex or a digit if decimal.
     if (((s[0] < '0') || (s[0] > '9')) && (s[0] != '$')) return false;
