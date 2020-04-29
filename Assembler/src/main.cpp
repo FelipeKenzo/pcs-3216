@@ -70,12 +70,14 @@ int main(int argc, char* argv[]) {
         // Pre-Process:
         line = std::regex_replace(line, comment, ""); // Remove Comments
         line = std::regex_replace(line, whites, " "); // Reduce whitespaces
+        line = uppercase(line);
         
         // Search for label
         if (std::regex_search(line, match, label)) { 
             
             std::string labelName = match[1];
             labelName.pop_back(); // removes the ":""
+            //labelName = uppercase(labelName);
 
             // Was it already defined?
             std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(labelName);
@@ -105,7 +107,8 @@ int main(int argc, char* argv[]) {
             //std::cout <<"line " << lc << ":" <<  line << "\n";
             //std::cout << match[1] << "\n";
             
-            std::string mnemoName = uppercase(match[1]);
+            //std::string mnemoName = uppercase(match[1]);
+            std::string mnemoName = match[1];
             
             // Is it a valid mnemonic?
             std::unordered_map<std::string,mnemonicData>::const_iterator it = mTable.find(mnemoName);
@@ -127,7 +130,8 @@ int main(int argc, char* argv[]) {
                 // Then it needs a parameter.
                 if (std::regex_search(line, match, alphanum)) {
 
-                    std::string paramVal = uppercase(match[1]);
+                    //std::string paramVal = uppercase(match[1]);
+                    std::string paramVal = match[1];
                     // std::cout << match[1] << "\n";
                     
                     // And it might be a label, if it isn't a number:
@@ -230,7 +234,7 @@ static void printSTable() {
 }
 
 static std::string uppercase(std::string s) {
-    for (int i = 1; i < s.length(); i++) {
+    for (int i = 0; i < s.length(); i++) {
         s[i] = std::toupper(s[i]);
     }
     return s;
