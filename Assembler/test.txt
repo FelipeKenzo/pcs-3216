@@ -1,11 +1,11 @@
-                org     $100
+            org     $100
         
-_START:         LV      1       ; AC = 1
-                mm      200     ; mem[0x200] = AC
-                LV      2       ; AC = 2
-                MM      202     ; mem[0x202] = AC
-
-_testAdd:       ADD     200     ; AC += mem[0x200]
-                ADD     202     ; AC += mem[0x202]
-
-                END 
+DADO:       CON     0
+AUX:        CON     $20     
+INIC:       LD      AUX     ; Primeira instrucao executavel do programa;
+            MM      AUX     ; Salva acumulador em AUX
+            ADD     $200    ; AC += mem[0x200]
+            ADD     $202    ; AC += mem[0x202]
+LOOP:       LD      DADO    ; Copia DADO para o acumulador
+            JP      LOOP    ; Fecha o loop
+            END     INIC    ; Indica INIC como endereco de partida do programa;

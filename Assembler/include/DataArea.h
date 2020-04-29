@@ -37,7 +37,7 @@ mnemonicData os  = {0xF, instruction, 2, true};
 // Pseudoinstructions
 mnemonicData org = {16, pseudo, 0, true };
 mnemonicData end = {16, pseudo, 0, false};
-mnemonicData con = {16, pseudo, 1, true };
+mnemonicData con = {16, pseudo, 2, true };
 
 static std::unordered_map<std::string, mnemonicData> mTable = {
     {"JP" ,  jp}, {"JZ" ,  jz}, {"JN" , jne}, {"LV" ,  lv},

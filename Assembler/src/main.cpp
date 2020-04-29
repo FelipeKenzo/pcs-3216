@@ -8,7 +8,7 @@
 
 #include "../include/DataArea.h"
 
-// Utility functions
+// Function Declarations
 static void printUsage();
 static void printSTable();
 static std::string uppercase(const std::string& s);
@@ -19,9 +19,10 @@ static bool isValidLabel(const std::string& s);
 static bool isValidMnemonic(const std::string& s);
 static bool isNumber(const std::string& s); 
 
+// Main
 int main(int argc, char* argv[]) {
     std::string filename;
-    std::string output = "a.o";
+    std::string output = "a";
     
     // Arguments parsing
     if (argc > 1) {
@@ -50,23 +51,23 @@ int main(int argc, char* argv[]) {
 
     // Check if file opened
     if (!src.is_open()) {
-        std::cerr << "Error: Could not open \"" << filename << "\". Exiting Program."
+        std::cerr << "Could not open \"" << filename << "\". Exiting Program."
                   << std::endl;
         return(-1);
     }
 
     // Utils
-    uint16_t    lc = 0;                     // Line Counter
-    uint16_t    pc = 0;                     // Instruction Counter
+    uint16_t    lc = 0;               // Line Counter
+    uint16_t    pc = 0;               // Instruction Counter
     
-    std::string line;                       // Current line
-    std::vector<std::string> words;         // Vector with words from line
+    std::string line;                 // Current line
+    std::vector<std::string> words;   // Vector with words from line
     
-    std::regex whites("\\s+");              // Matches whitespaces
-    std::regex comment("(;.*)");            // Matches a comment
+    std::regex regWhites("\\s+");        // Matches whitespaces
+    std::regex regComment("(;.*)");      // Matches a comment
     
-    bool isEnd = false;
-    bool isError = false;
+    bool isEnd = false;               // Program End flag
+    bool isError = false;             // Error flag
 
     /*---- First Pass -> Generate Symbol and Constant Tables, report syntax errors. ----*/
     while (getline(src, line) && !isEnd) {
@@ -75,8 +76,8 @@ int main(int argc, char* argv[]) {
         lc++;
 
         // Line pre-processing:
-        line = std::regex_replace(line, comment, ""); // Remove Comments
-        line = std::regex_replace(line, whites, " "); // Reduce whitespaces
+        line = std::regex_replace(line, regComment, ""); // Remove Comments
+        line = std::regex_replace(line, regWhites, " "); // Reduce whitespaces
         line = uppercase(line);                       // Uppercase all words
         words = split(line, ' ');                     // Extract word vector
 
@@ -85,15 +86,13 @@ int main(int argc, char* argv[]) {
 
         // There should only be two or three words: 
         if (words.size() > 3) {
-            std::cerr << "Error: too many parameters at line (" << lc << ").\n";
-            isError = true;
-            continue;
+            std::cerr << "Warning: too many operands at line (" << lc << ").\n";
         }
 
         // If more than two words, first is a label:
         if (words.size() > 2) {
             std::string newLabel = words[0];
-            //std::cout << newLabel << "\n";
+            std::cout << newLabel << "\n";
 
             if (!isValidLabel(newLabel)) {
                 std::cerr << "Error: invalid label at line (" << lc << ").\n";
@@ -146,52 +145,51 @@ int main(int argc, char* argv[]) {
 
         if (mnemonic == "END") isEnd = true; // Important to end step 1.
 
-        // Does it require a parameter?
+        // Does it require an operand?
         if(mTable[mnemonic].param) {
-            // There needs to be a parameter:
+            // There needs to be an operand:
             if (words.size() < 2) {
-                std::cerr << "Error: instruction \"" << mnemonic << "\" at line (" << lc << ") requires a parameter.\n";
+                std::cerr << "Error: instruction \"" << mnemonic << "\" at line (" << lc << ") requires an operand.\n";
                 isError = true;
                 continue;
             }
 
-            std::string parameter = words[1];
+            std::string operand = words[1];
 
-            // Is the parameter a number?
-            if (isNumber(parameter)) {
+            // Is the operand a number?
+            if (isNumber(operand)) {
                 
-                // If it is, it could be the ORG parameter. Then, we update PC.
-                if (mnemonic == "ORG") {
-                    int16_t addr;
-                    if (parameter[0] == '$') addr = htoi(parameter); // parameter in HEX
-                    else addr = std::stoi(parameter);                // parameter in DEC
+                int16_t addr;
+                if (operand[0] == '$') addr = htoi(operand); // operand in HEX
+                else addr = std::stoi(operand);                // operand in DEC
 
-                    // Checks if valid address
-                    if (addr > 0xFFF) {
-                        std::cerr << "Error: invalid ORG address at line (" << lc <<").\n";
-                        isError = true;
-                        continue;
-                    }
-
-                    pc = addr;
+                // Checks if valid operand
+                if (addr > 0xFFF) {
+                    std::cerr << "Error: invalid operand value at line (" << lc <<").\n";
+                    isError = true;
+                    continue;
                 }
+
+                // If it is, it could be the ORG operand. Then, we update PC.
+                if (mnemonic == "ORG") pc = addr;
+
             }
             // if not, it is a label:
             else {
                 // Sees if it is already defined:
-                std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(parameter);
+                std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(operand);
 
                 if (it == sTable.end()) {
                     // It wasnt, then we add it to the Symbol Table;
                     symbolData data = {pc, lc, false, true};
-                    sTable[parameter] = data;
+                    sTable[operand] = data;
                 }
                 else {
                     // It was, then we set referenced to true;
-                    sTable[parameter].isReferenced = true;
+                    sTable[operand].isReferenced = true;
                 }
 
-                // ORG cannot receive a label as parameter.
+                // ORG cannot receive a label as operand.
                 if (mnemonic == "ORG") {
                     std::cerr << "Error: ORG address at line (" << lc <<") cannot be a label.\n";
                     isError = true;
@@ -209,19 +207,24 @@ int main(int argc, char* argv[]) {
     bool undefinedLabel = false;
 
     std::unordered_map<std::string, symbolData>::iterator it;
+    int labelSize = 0;
 
     for (it = sTable.begin(); it != sTable.end(); it++) {
+        if (it->first.length() > labelSize) labelSize = it->first.length();
         if (!it->second.isDefined) {
             std::cerr << "Error: label \"" << it->first << "\" used but not defined. At line (" << it->second.line
                           << ").\n";
-            undefinedLabel = true;
+            isError = true;
         }
     }
     
-    if (undefinedLabel) return(-1);
+    if (isError) return(-1);
 
 
     printSTable();
+
+    /*---- Second Pass -> Generate output code and listing.          ----*/
+    /*---- It doesn't checks for erros, since Step 1 already did it. ----*/
 
     // Go back to start of file
     src.clear();
@@ -229,36 +232,135 @@ int main(int argc, char* argv[]) {
     pc = 0;
     lc = 0;
     isEnd = false;
-
-    /*---- Second Pass -> Generate output code and listing.          ----*/
-    /*---- It doesn't checks for erros, since Step 1 already did it. ----*/
     
-    // Go back to start of file
-    std::ofstream out;
-    out.open(output);
+    // Open output listing output file
+    std::ofstream lst;
+    lst.open(output + ".lst");
+
+    if (!lst.is_open()) {
+        std::cerr << "Could not create \"" << output << ".lst\"; Exiting program.\n";
+        return(-1);
+    }
+
+    // Open binary output file
+    std::ofstream bin;
+    bin.open(output + ".o", std::ios::binary);
+
+    if (!bin.is_open()) {
+        std::cerr << "Could not create \"" << output << ".o\"; Exiting program.\n";
+        return(-1);
+    }
+
+    lst << "Listing for source file \"" << filename << "\".\n";
+    lst << "Note: memory is Little-Endian.\n\n";
+    
+    std::cout << labelSize << "\n";
 
     while (getline(src, line) && !isEnd) {
         isEnd = false;
-
         lc++;
+        
+        // Listing variables
+        std::string comment  = "";
+        std::string label    = "";
+        std::string mnemonic = "";
+        std::string operand  = "";
+        uint16_t code = 0;
+        
+        // Save Comment
+        std::smatch match;
+        std::regex_search(line, match, regComment);
+        comment = match[1];
 
         // Line pre-processing:
-        line = std::regex_replace(line, comment, ""); // Remove Comments
-        line = std::regex_replace(line, whites, " "); // Reduce whitespaces
-        line = uppercase(line);                       // Uppercase all words
-        words = split(line, ' ');                     // Get word vector
+        line = std::regex_replace(line, regComment, ""); // Remove Comments
+        line = std::regex_replace(line, regWhites, " "); // Reduce whitespaces
+        line = uppercase(line);                          // Uppercase all words
+        words = split(line, ' ');                        // Get word vector
 
+        if (words.size() == 0 ) continue;                // ignore white lines
 
-        // for (int i = 0; i < words.size(); i++) {
-        //     std::cout << words[i] << " ";
-        // }
+        // save and delete labels
+        if (words.size() > 2) {
+            label = words[0];
+            label.pop_back();
+            words.erase(words.begin());
+        }
 
-        //std::cout << "\n";
-        //std::cout << std::setw(2) << lc << ": " << line << "\n";
+        // Extract mnemonic
+        mnemonic = words[0];
+
+        if (words.size() > 1) {
+            // Extract operand if it exists
+            operand  = words[1];
+        }
+
+        // Change PC on ORG
+        if (mnemonic == "ORG") {
+            if (operand[0] == '$') pc = htoi(operand); // operand in HEX
+            else pc = std::stoi(operand);              // operand in DEC
+        }
+
+        // Calculate machine code
+        if (mTable[mnemonic].size == 2) {
+            code = mTable[mnemonic].opcode << 12;
+
+            if (isNumber(operand)) {
+                if (operand[0] == '$') code = code | htoi(operand);
+                else code = code | std::stoi(operand);
+            }
+            else {
+                code = code | sTable[operand].address;
+            }
+
+            // To Little Endian
+            code = (code << 8) | (code >> 8);
+        }
+        
+        // Output to lst file:
+        // If it doensn't occupy memory space:
+        if (mTable[mnemonic].size == 0) {
+            // Blank space for address and code
+            lst << "             "; 
+            
+            // Blankspace for label
+            for (int i = 0; i < labelSize; i++) {
+                lst << " "; 
+            }
+            lst << "  ";
+        }
+        else {
+            // Output memory location
+            lst << std::right << std::setfill('0') << std::setw(4) << std::hex  << pc << " ";
+
+            // Output machine code
+            lst << std::setw(2) << std::hex << (code >> 8) << " ";       // First Byte
+            lst << std::setw(2) << std::hex << (code & 0x00FF) << "   "; // Second Byte
+            
+            // Output label;
+            lst << std::right << std::setfill(' ') << std::setw(labelSize) << label << "  "; 
+        }
+
+        // Output mnemonic
+        lst << std::left << std::setfill(' ') << std::setw(3) << mnemonic << "  ";
+
+        // Output operand
+        lst << std::setw(labelSize) << operand << " ";
+
+        // Output comment
+        lst << comment << "\n";
+
+        pc += mTable[mnemonic].size;
     }
 
     return(0);
 }
+
+
+
+//*----------------------------------*//
+//*---- Function Implementations ----*//
+//*----------------------------------*//
 
 static void printUsage() {
     std::cerr << "Usage: assembler <option(s)> source\n\n"
