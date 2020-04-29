@@ -1,0 +1,11 @@
+        ORG     100
+        
+START:  LV      1       ; AC = 1
+        MM              ; mem[0x200] = AC
+        LV              ; AC = 2
+        LUCA    202     ; mem[0x202] = AC
+
+START:  ADD     200     ; AC += mem[0x200]
+        ADD     202     ; AC += mem[0x202]
+
+        END 
