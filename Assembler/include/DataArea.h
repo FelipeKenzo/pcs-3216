@@ -39,7 +39,7 @@ mnemonicData org = {16, pseudo, 0, true };
 mnemonicData end = {16, pseudo, 0, false};
 mnemonicData con = {16, pseudo, 1, true };
 
-static const std::unordered_map<std::string, mnemonicData> mTable = {
+static std::unordered_map<std::string, mnemonicData> mTable = {
     {"JP" ,  jp}, {"JZ" ,  jz}, {"JN" , jne}, {"LV" ,  lv},
     {"ADD", add}, {"SUB", sub}, {"MUL", mul}, {"DIV",  dv},
     {"LD" ,  ld}, {"MM" ,  mm}, {"SC" ,  sc}, {"RS" ,  jp},

@@ -8,11 +8,16 @@
 
 #include "../include/DataArea.h"
 
+// Utility functions
 static void printUsage();
 static void printSTable();
-static std::string uppercase(std::string s);
-static std::uint16_t htoi(std::string hex);
-int16_t pow16 (int16_t exp);
+static std::string uppercase(const std::string& s);
+static std::uint16_t htoi(const std::string& hex);
+static int16_t pow16 (int16_t exp);
+static std::vector<std::string> split(const std::string& str, char delim); // Taken from github (https://stackoverflow.com/questions/5607589/right-way-to-split-an-stdstring-into-a-vectorstring)
+static bool isValidLabel(const std::string& s);
+static bool isValidMnemonic(const std::string& s);
+static bool isNumber(const std::string& s); 
 
 int main(int argc, char* argv[]) {
     std::string filename;
@@ -49,143 +54,155 @@ int main(int argc, char* argv[]) {
     // Utils
     uint16_t    lc = 0;                     // Line Counter
     uint16_t    pc = 0;                     // Instruction Counter
+    
     std::string line;                       // Current line
-    std::regex whites("\\s+");
-    std::regex label("([_*\\w]+\\:)");      // Matches a label
-    std::regex alphanum("(\\$?[A-Z0-9]+)"); // Matches an alphanumeric word
-    std::regex number("(\\$?[0-9]+)");      // Matches a number
-    std::regex word("([A-Z]+)");
+    std::vector<std::string> words;         // Vector with words from line
+    
+    std::regex whites("\\s+");              // Matches whitespaces
     std::regex comment("(;.*)");            // Matches a comment
-    std::smatch match;                      // Match results
-    bool isOrigin = false;
+    
     bool isEnd = false;
+    bool isError = false;
 
     // First Pass -> Generate Symbol and Constant Tables, report syntax errors.
     while (getline(src, line) && !isEnd) {
-        isOrigin = false;
         isEnd = false;
 
         lc++;
 
-        // Pre-Process:
+        // Line pre-processing:
         line = std::regex_replace(line, comment, ""); // Remove Comments
         line = std::regex_replace(line, whites, " "); // Reduce whitespaces
-        line = uppercase(line);
-        
-        // Search for label
-        if (std::regex_search(line, match, label)) { 
-            
-            std::string labelName = match[1];
-            labelName.pop_back(); // removes the ":""
-            //labelName = uppercase(labelName);
+        line = uppercase(line);                       // Uppercase all words
+        words = split(line, ' ');                     // Extract word vector
+
+        // Skip empty lines:
+        if (words.size() == 0) continue;
+
+        // There should only be two or three words: 
+        if (words.size() > 3) {
+            std::cerr << "Error: too many parameters at line (" << lc << ").\n";
+            isError = true;
+            continue;
+        }
+
+        // If more than two words, first is a label:
+        if (words.size() > 2) {
+            std::string newLabel = words[0];
+            //std::cout << newLabel << "\n";
+
+            if (!isValidLabel(newLabel)) {
+                std::cerr << "Error: invalid label at line (" << lc << ").\n";
+                isError = true;
+                continue;
+            }
+
+            // Now we remove the ':' at the end:
+            newLabel.pop_back();
 
             // Was it already defined?
-            std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(labelName);
+            std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(newLabel);
 
             if (it == sTable.end()) {
-                // It wasnt, then we add it to the Symbol Table
-                symbolData s = {pc, lc, true, false};
-                sTable[labelName] = s;
+                
+                // It wasnt, then we add it to the Symbol Table:
+                symbolData data = {pc, lc, true, false};
+                sTable[newLabel] = data;
+
+                // And remove it from word vector:
+                words.erase(words.begin()); // It is inefficient, but our vector is small.
 
                 //std::cout << labelName << "at line " << lc << "\n";
-
-                // And remove it from the line
-                size_t pos = line.find(labelName + ":");
-                line.erase(pos, labelName.length());
             }
             else {
-                // It was, error!
+                // label redefinition!
                 std::cerr << "Error: label redefined at line (" << lc << "), previously defined at line ("
                           << it->second.line << ").\n";
-                return(-1);
+                isError = true;
+                continue;
             }
         }
 
-        // Searches for mnemonic:
-        if (std::regex_search(line, match, alphanum)) {
-            
-            //std::cout <<"line " << lc << ":" <<  line << "\n";
-            //std::cout << match[1] << "\n";
-            
-            //std::string mnemoName = uppercase(match[1]);
-            std::string mnemoName = match[1];
-            
-            // Is it a valid mnemonic?
-            std::unordered_map<std::string,mnemonicData>::const_iterator it = mTable.find(mnemoName);
+        // Next word should be a mnemonic:
+        std::string mnemonic = words[0];
 
-            if (it == mTable.end()) {
-                std::cerr << "Error: invalid mnemonic \"" << mnemoName << "\" at line (" << lc << ").\n";
-                return(-1);
+        if (!isValidMnemonic(mnemonic)) {
+            std::cerr << "Error: invalid mnemonic \"" << mnemonic << "\" at line (" << lc << ").\n";
+            isError = true;
+            continue;
+        }
+
+        // Check if instruction is at valid address
+        if (mTable[mnemonic].size > 0) {
+            if (pc > 0xFFF) {
+                std::cerr <<"Error: invalid instruction address (0x" << std::hex << pc << ") at line (" << std::dec << lc << ").\n";
+                continue;
+            }
+        }
+
+        if (mnemonic == "END") isEnd = true; // Important to end step 1.
+
+        // Does it require a parameter?
+        if(mTable[mnemonic].param) {
+            // There needs to be a parameter:
+            if (words.size() < 2) {
+                std::cerr << "Error: instruction \"" << mnemonic << "\" at line (" << lc << ") requires a parameter.\n";
+                isError = true;
+                continue;
             }
 
-            if (mnemoName == "ORG") isOrigin = true; // Important to alter PC.
-            if (mnemoName == "END") isEnd = true;    // Important to end step.
+            std::string parameter = words[1];
 
-            // Remove mnemonic from line
-            size_t pos = line.find(mnemoName);
-            line.erase(pos, mnemoName.length());
+            // Is the parameter a number?
+            if (isNumber(parameter)) {
+                
+                // If it is, it could be the ORG parameter. Then, we update PC.
+                if (mnemonic == "ORG") {
+                    int16_t addr;
+                    if (parameter[0] == '$') addr = htoi(parameter); // parameter in HEX
+                    else addr = std::stoi(parameter);                // parameter in DEC
 
-            // Does it requires a parameter?
-            if (it->second.param) {
-                // Then it needs a parameter.
-                if (std::regex_search(line, match, alphanum)) {
-
-                    //std::string paramVal = uppercase(match[1]);
-                    std::string paramVal = match[1];
-                    // std::cout << match[1] << "\n";
-                    
-                    // And it might be a label, if it isn't a number:
-                    if (!std::regex_search(paramVal, match, number)) {
-
-                        // ORG does not support a label.
-                        if (isOrigin) {
-                            std::cerr << "Error: ORG label at line (" << lc << ") doesnt accept label as argument.\n";
-                            return(-1);
-                        }
-                        
-                        // Sees if it is already defined:
-                        std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(mnemoName);
-
-                        if (it == sTable.end()) {
-                            // It wasnt, then we add it to the Symbol Table
-                            symbolData s = {pc, lc, false, true};
-                            sTable[paramVal] = s;
-                        }
-                        else {
-                            // It was, then we set referenced to true
-                            sTable[paramVal].isReferenced = true;
-                        }
+                    // Checks if valid address
+                    if (addr > 0xFFF) {
+                        std::cerr << "Error: invalid ORG address at line (" << lc <<").\n";
+                        isError = true;
+                        continue;
                     }
 
-                    //std::cout << match[1] << "\n";
-
-                    // ORG changes PC
-                    if (isOrigin) {
-                        std::string addr = match[1];
-                        //std::cout << addr << "\n";
-                        if (addr[0] == '$') pc = htoi(addr);
-                        else pc = std::stoi(addr);
-                        
-                        //std::cout << "ORG: pc set to " << pc << "\n";
-                    }
+                    pc = addr;
                 }
-                // No parameter found :(
+            }
+            // if not, it is a label:
+            else {
+                // Sees if it is already defined:
+                std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(parameter);
+
+                if (it == sTable.end()) {
+                    // It wasnt, then we add it to the Symbol Table;
+                    symbolData data = {pc, lc, false, true};
+                    sTable[parameter] = data;
+                }
                 else {
-                    std::cerr << "Error: instruction \"" << mnemoName << "\" at line (" << lc << ") requires a parameter.\n";
-                    return(-1);
+                    // It was, then we set referenced to true;
+                    sTable[parameter].isReferenced = true;
+                }
+
+                // ORG cannot receive a label as parameter.
+                if (mnemonic == "ORG") {
+                    std::cerr << "Error: ORG address at line (" << lc <<") cannot be a label.\n";
+                    isError = true;
+                    continue;
                 }
             }
-
-            pc += it->second.size;
-
         }
-
+            
+        pc += mTable[mnemonic].size;
         //std::cout << "\n";
 
     }
 
     // Check if every label was defined
-    bool unidefinedLabel = false;
+    bool undefinedLabel = false;
 
     std::unordered_map<std::string, symbolData>::iterator it;
 
@@ -193,11 +210,11 @@ int main(int argc, char* argv[]) {
         if (!it->second.isDefined) {
             std::cerr << "Error: label \"" << it->first << "\" used but not defined. At line (" << it->second.line
                           << ").\n";
-            unidefinedLabel = true;
+            undefinedLabel = true;
         }
     }
     
-    if (unidefinedLabel) return(-1);
+    if (undefinedLabel) return(-1);
 
 
     printSTable();
@@ -205,10 +222,33 @@ int main(int argc, char* argv[]) {
     // Go back to start of file
     src.clear();
     src.seekg(0, std::ios::beg);
+    pc = 0;
+    lc = 0;
+    isEnd = false;
 
-    // Second Pass -> Generate output code.
+    // Second Pass -> Generate output code and listing.
+    // It doesn't checks for erros, since Step 1 already di.
     std::ofstream out;
     out.open(output);
+
+    while (getline(src, line) && !isEnd) {
+        lc++;
+        isEnd = false;
+
+        // Pre-process line
+        line = std::regex_replace(line, comment, ""); // Remove Comments.
+        line = std::regex_replace(line, whites, " "); // Reduce whitespaces.
+        line = uppercase(line);                       // Uppercase everything.
+
+        words = split(line, ' ');
+
+        // for (int i = 0; i < words.size(); i++) {
+        //     std::cout << words[i] << " ";
+        // }
+
+        //std::cout << "\n";
+        //std::cout << std::setw(2) << lc << ": " << line << "\n";
+    }
 
     return(0);
 }
@@ -233,15 +273,16 @@ static void printSTable() {
     std::cout << "\n";
 }
 
-static std::string uppercase(std::string s) {
+static std::string uppercase(const std::string& s) {
+    std::string upper = s;
     for (int i = 0; i < s.length(); i++) {
-        s[i] = std::toupper(s[i]);
+        upper[i] = std::toupper(s[i]);
     }
-    return s;
+    return upper;
 }
 
 // Converts ascii hex to integer
-static std::uint16_t htoi(std::string hex) {
+static std::uint16_t htoi(const std::string& hex) {
     //std::cout << "hex number: (" << hex << ")\n";
     
     uint16_t intNum = 0;
@@ -262,11 +303,66 @@ static std::uint16_t htoi(std::string hex) {
 }
 
 // Returns 16^exp
-int16_t pow16 (int16_t exp) {
+static int16_t pow16 (int16_t exp) {
     int16_t x = 1;
     for (int i = 0; i < exp; i++) {
         x *= 16;
     }
     //std::cout << "16^" << exp << " = " << x << "\n";
     return x;
+}
+
+// Splits string into vector of strings.
+static std::vector<std::string> split(const std::string& str, char delim) {
+    std::vector<std::string> strings;
+    size_t start;
+    size_t end = 0;
+    while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
+        end = str.find(delim, start);
+        strings.push_back(str.substr(start, end - start));
+    }
+    return strings;
+}
+
+static bool isValidLabel(const std::string& s) {
+    // Label must start with either '_' or letter.
+    if (((s[0] < 'A') || (s[0] > 'Z')) &&  (s[0] != '_')) return false;
+    
+    // Following characters need to be alphanumeric, '-' or '_'.
+    for (int i = 1; i < s.length()-1; i++) {
+        char c = s[i];
+        if ((c < '0') || (c > '9')) {         // Not digit
+            if ((c < 'A') || (c > 'Z')) {     // Not letter
+                if ((c != '-') || (c != '_')) // Not '-' or '_'
+                    return false;
+            }
+        }
+    }
+
+    // Must end with ':'
+    if (s[s.length()-1] != ':') return false;
+
+    return true;
+}
+
+static bool isValidMnemonic(const std::string& s) {
+    std::unordered_map<std::string,mnemonicData>::const_iterator it = mTable.find(s);
+
+    if (it == mTable.end()) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool isNumber(const std::string& s) {
+    // Should start with '$' if hex or a digit if decimal.
+    if (((s[0] < '0') || (s[0] > '9')) && (s[0] != '$')) return false;
+
+    // All other characters 
+    for (int i = 1; i < s.length()-1; i++) {
+        if (((s[0] < '0') || (s[0] > '9')) && (s[0] != '$')) return false;
+    }
+
+    return true;
 }
