@@ -23,6 +23,7 @@ static bool isNumber(const std::string& s);
 int main(int argc, char* argv[]) {
     std::string filename;
     std::string output = "a";
+    bool warnings = false;
     
     // Arguments parsing
     if (argc > 1) {
@@ -35,6 +36,9 @@ int main(int argc, char* argv[]) {
             else if (arg == "-h" || arg == "--help") {
                 printUsage();
                 return(0);
+            }
+            else if (arg == "-w" || arg == "--warnings") {
+                warnings = true;
             }
             else {
                 filename = argv[i];
@@ -85,7 +89,7 @@ int main(int argc, char* argv[]) {
 
         // There should only be two or three words: 
         if (words.size() > 3) {
-            std::cerr << "Warning: too many operands at line (" << lc << ").\n";
+            if (warnings) std::cerr << "Warning(" << lc << "): too many operands.\n";
         }
 
         // If more than two words, first is a label:
@@ -94,7 +98,7 @@ int main(int argc, char* argv[]) {
             //std::cout << newLabel << "\n";
 
             if (!isValidLabel(newLabel)) {
-                std::cerr << "Error: invalid label at line (" << lc << ").\n";
+                std::cerr << "Error(" << lc << "): invalid label .\n";
                 isError = true;
                 continue;
             }
@@ -103,7 +107,7 @@ int main(int argc, char* argv[]) {
             newLabel.pop_back();
 
             // Was it already defined?
-            std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(newLabel);
+            std::map<std::string,symbolData>::const_iterator it = sTable.find(newLabel);
 
             if (it == sTable.end()) {
                 
@@ -118,7 +122,7 @@ int main(int argc, char* argv[]) {
             }
             else {
                 // label redefinition!
-                std::cerr << "Error: label redefined at line (" << lc << "), previously defined at line ("
+                std::cerr << "Error(" << lc << "): label redefined , previously defined at line ("
                           << it->second.line << ").\n";
                 isError = true;
                 continue;
@@ -129,7 +133,7 @@ int main(int argc, char* argv[]) {
         std::string mnemonic = words[0];
 
         if (!isValidMnemonic(mnemonic)) {
-            std::cerr << "Error: invalid mnemonic \"" << mnemonic << "\" at line (" << lc << ").\n";
+            std::cerr << "Error(" << lc << "): invalid mnemonic \"" << mnemonic << "\".\n";
             isError = true;
             continue;
         }
@@ -137,7 +141,7 @@ int main(int argc, char* argv[]) {
         // Check if instruction is at valid address
         if (mTable[mnemonic].size > 0) {
             if (pc > 0xFFF) {
-                std::cerr <<"Error: invalid instruction address (0x" << std::hex << pc << ") at line (" << std::dec << lc << ").\n";
+                std::cerr <<"Error(" << lc << "): invalid instruction address (0x" << std::hex << pc << ") at line (" << std::dec << lc << ").\n";
                 continue;
             }
         }
@@ -148,7 +152,7 @@ int main(int argc, char* argv[]) {
         if(mTable[mnemonic].param) {
             // There needs to be an operand:
             if (words.size() < 2) {
-                std::cerr << "Error: instruction \"" << mnemonic << "\" at line (" << lc << ") requires an operand.\n";
+                std::cerr << "Error(" << lc << "): instruction \"" << mnemonic << "\" requires an operand.\n";
                 isError = true;
                 continue;
             }
@@ -164,7 +168,7 @@ int main(int argc, char* argv[]) {
 
                 // Checks if valid operand
                 if (addr > 0xFFF) {
-                    std::cerr << "Error: invalid operand value at line (" << lc <<").\n";
+                    std::cerr << "Error(" << lc << "): invalid operand value.\n";
                     isError = true;
                     continue;
                 }
@@ -176,7 +180,7 @@ int main(int argc, char* argv[]) {
             // if not, it is a label:
             else {
                 // Sees if it is already defined:
-                std::unordered_map<std::string,symbolData>::const_iterator it = sTable.find(operand);
+                std::map<std::string,symbolData>::const_iterator it = sTable.find(operand);
 
                 if (it == sTable.end()) {
                     // It wasnt, then we add it to the Symbol Table;
@@ -190,7 +194,7 @@ int main(int argc, char* argv[]) {
 
                 // ORG cannot receive a label as operand.
                 if (mnemonic == "ORG") {
-                    std::cerr << "Error: ORG address at line (" << lc <<") cannot be a label.\n";
+                    std::cerr << "Error(" << lc << "): ORG cannot have a label.\n";
                     isError = true;
                     continue;
                 }
@@ -202,18 +206,20 @@ int main(int argc, char* argv[]) {
 
     }
 
-    // Check if every label was defined
+    // Check if every label was defined and referenced
     bool undefinedLabel = false;
 
-    std::unordered_map<std::string, symbolData>::iterator it;
+    std::map<std::string, symbolData>::iterator it;
     int labelSize = 0;
 
     for (it = sTable.begin(); it != sTable.end(); it++) {
         if (it->first.length() > labelSize) labelSize = it->first.length();
         if (!it->second.isDefined) {
-            std::cerr << "Error: label \"" << it->first << "\" used but not defined. At line (" << it->second.line
-                          << ").\n";
+            std::cerr << "Error(" << it->second.line << "): label \"" << it->first << "\" used but not defined.\n";
             isError = true;
+        }
+        if (it->second.isReferenced) {
+            if (warnings) std::cerr << "Warning(" << it->second.line << ") label \"" << it->first << "\" is not referenced.\n";
         }
     }
     
@@ -350,11 +356,17 @@ int main(int argc, char* argv[]) {
                 chks += addr & 0xF;
                 addr = addr >> 4;
             }
+            while(size) {
+                chks += size & 0xF;
+                size = size >> 4;
+            }
             while (data) {
                 chks += data & 0xF;
                 data = data >> 4;
             }
-            chks += size;
+            
+
+            std::cout << std::hex << chks << "\n";
 
             // One's complement
             chks = 0xFFFF - chks;
@@ -365,7 +377,7 @@ int main(int argc, char* argv[]) {
             vnc << std::right << std::setfill('0') <<  std::uppercase
                 << std::setw(2) << std::hex  << chks << "\n";
             
-            size = 0;
+            chks = 0;
         }
         
         // Output to lst file:
@@ -508,7 +520,7 @@ static bool isValidLabel(const std::string& s) {
 
 // Checks if given string is a valid mnemonic
 static bool isValidMnemonic(const std::string& s) {
-    std::unordered_map<std::string,mnemonicData>::const_iterator it = mTable.find(s);
+    std::map<std::string,mnemonicData>::const_iterator it = mTable.find(s);
 
     if (it == mTable.end()) {
         return false;
