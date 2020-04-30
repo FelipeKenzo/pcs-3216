@@ -57,14 +57,14 @@ int main(int argc, char* argv[]) {
     }
 
     // Utils
-    uint16_t    lc = 0;               // Line Counter
-    uint16_t    pc = 0;               // Instruction Counter
+    uint16_t lc = 0;                  // Line Counter
+    uint16_t pc = 0;                  // Instruction Counter
     
     std::string line;                 // Current line
     std::vector<std::string> words;   // Vector with words from line
     
-    std::regex regWhites("\\s+");        // Matches whitespaces
-    std::regex regComment("(;.*)");      // Matches a comment
+    std::regex regWhites("\\s+");     // Matches whitespaces
+    std::regex regComment("(;.*)");   // Matches a comment
     
     bool isEnd = false;               // Program End flag
     bool isError = false;             // Error flag
@@ -72,7 +72,6 @@ int main(int argc, char* argv[]) {
     /*---- First Pass -> Generate Symbol and Constant Tables, report syntax errors. ----*/
     while (getline(src, line) && !isEnd) {
         isEnd = false;
-
         lc++;
 
         // Line pre-processing:
@@ -92,7 +91,7 @@ int main(int argc, char* argv[]) {
         // If more than two words, first is a label:
         if (words.size() > 2) {
             std::string newLabel = words[0];
-            std::cout << newLabel << "\n";
+            //std::cout << newLabel << "\n";
 
             if (!isValidLabel(newLabel)) {
                 std::cerr << "Error: invalid label at line (" << lc << ").\n";
@@ -160,8 +159,8 @@ int main(int argc, char* argv[]) {
             if (isNumber(operand)) {
                 
                 int16_t addr;
-                if (operand[0] == '$') addr = htoi(operand); // operand in HEX
-                else addr = std::stoi(operand);                // operand in DEC
+                if (operand[0] == '$') addr = htoi(operand);  // operand in HEX
+                else addr = std::stoi(operand);               // operand in DEC
 
                 // Checks if valid operand
                 if (addr > 0xFFF) {
@@ -219,9 +218,7 @@ int main(int argc, char* argv[]) {
     }
     
     if (isError) return(-1);
-
-
-    printSTable();
+    //printSTable();
 
     /*---- Second Pass -> Generate output code and listing.          ----*/
     /*---- It doesn't checks for erros, since Step 1 already did it. ----*/
@@ -233,7 +230,7 @@ int main(int argc, char* argv[]) {
     lc = 0;
     isEnd = false;
     
-    // Open output listing output file
+    // Open listing output file
     std::ofstream lst;
     lst.open(output + ".lst");
 
@@ -242,11 +239,11 @@ int main(int argc, char* argv[]) {
         return(-1);
     }
 
-    // Open binary output file
-    std::ofstream bin;
-    bin.open(output + ".o", std::ios::binary);
+    // Open hex output file
+    std::ofstream vnc;
+    vnc.open(output + ".vnc");
 
-    if (!bin.is_open()) {
+    if (!vnc.is_open()) {
         std::cerr << "Could not create \"" << output << ".o\"; Exiting program.\n";
         return(-1);
     }
@@ -254,18 +251,24 @@ int main(int argc, char* argv[]) {
     lst << "Listing for source file \"" << filename << "\".\n";
     lst << "Note: memory is Little-Endian.\n\n";
     
-    std::cout << labelSize << "\n";
+    //std::cout << labelSize << "\n";
+
+    // Hex output variables
+    uint16_t code = 0;
+    uint16_t addr = 0;
+    uint16_t size = 0;
+    uint64_t data = 0;
+    uint16_t chks = 0;
 
     while (getline(src, line) && !isEnd) {
         isEnd = false;
         lc++;
         
-        // Listing variables
+        // Listing output variables
         std::string comment  = "";
         std::string label    = "";
         std::string mnemonic = "";
         std::string operand  = "";
-        uint16_t code = 0;
         
         // Save Comment
         std::smatch match;
@@ -316,12 +319,60 @@ int main(int argc, char* argv[]) {
             // To Little Endian
             code = (code << 8) | (code >> 8);
         }
+
+        // Output to vnc file:
+        // Only real instructions are generated
+        if (mTable[mnemonic].size == 2) {
+            // Write address if not written yet;
+            // std::cout << (addr == 0) << "\n";
+            if (addr == 0) {
+                addr = pc;
+                //std::cout << "addr = " << std::hex << addr << "\n";
+            }
+            // fill data
+            data = (data << 16) | code;
+            size += 4;
+            //std::cout << "data = " <<std::setfill('0') << std::setw(16) << std::hex << data << "\n";
+        }
+        
+        // End block and write to vnc file
+        if ((size == 16 || mnemonic == "ORG" || mnemonic == "END") && addr) {
+            //std::cout << "ENTRI\n";
+            //std::cout << size << "\n";
+            vnc << std::right << std::setfill('0') <<  std::uppercase
+                << std::setw(3) << std::hex  << addr // write address
+                << std::setw(1) << size              // write size
+                << std::setw(size) << data;          // write data
+
+            // Calculate checksum
+            // Sum all nibbles
+            while (addr) {
+                chks += addr & 0xF;
+                addr = addr >> 4;
+            }
+            while (data) {
+                chks += data & 0xF;
+                data = data >> 4;
+            }
+            chks += size;
+
+            // One's complement
+            chks = 0xFFFF - chks;
+            // Isolate last byte
+            chks = chks & 0x00FF;
+            
+            // Write checksum
+            vnc << std::right << std::setfill('0') <<  std::uppercase
+                << std::setw(2) << std::hex  << chks << "\n";
+            
+            size = 0;
+        }
         
         // Output to lst file:
         // If it doensn't occupy memory space:
         if (mTable[mnemonic].size == 0) {
             // Blank space for address and code
-            lst << "             "; 
+            lst << "            "; 
             
             // Blankspace for label
             for (int i = 0; i < labelSize; i++) {
@@ -331,11 +382,12 @@ int main(int argc, char* argv[]) {
         }
         else {
             // Output memory location
-            lst << std::right << std::setfill('0') << std::setw(4) << std::hex  << pc << " ";
+            lst << std::right << std::setfill('0') << std::setw(3) << std::uppercase
+                << std::hex  << pc << " ";
 
             // Output machine code
-            lst << std::setw(2) << std::hex << (code >> 8) << " ";       // First Byte
-            lst << std::setw(2) << std::hex << (code & 0x00FF) << "   "; // Second Byte
+            lst << std::setw(2) << (code >> 8) << " ";       // First Byte
+            lst << std::setw(2) << (code & 0x00FF) << "   "; // Second Byte
             
             // Output label;
             lst << std::right << std::setfill(' ') << std::setw(labelSize) << label << "  "; 
@@ -355,8 +407,6 @@ int main(int argc, char* argv[]) {
 
     return(0);
 }
-
-
 
 //*----------------------------------*//
 //*---- Function Implementations ----*//
@@ -399,7 +449,7 @@ static std::uint16_t htoi(const std::string& hex) {
     uint16_t intNum = 0;
     uint16_t len = hex.length();
     
-    for (int i = 0; i < len; i++) {
+    for (int i = 1; i < len; i++) {
 
         if ((hex[i] > 0x29) && (hex[i] < 0x3A)) { // 0-9
             intNum += (hex[i] - 0x30)*pow16(len-i-1);

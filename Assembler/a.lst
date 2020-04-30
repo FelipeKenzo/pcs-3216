@@ -1,13 +1,13 @@
 Listing for source file "test.txt".
 Note: memory is Little-Endian.
 
-                   ORG  $100 
-0100 00 00   DADO  CON  0    
-0102 20 00    AUX  CON  $20  
-0104 02 81   INIC  LD   AUX  ; Primeira instrucao executavel do programa;
-0106 02 91         MM   AUX  ; Salva acumulador em AUX
-0108 00 42         ADD  $200 ; AC += mem[0x200]
-010a 02 42         ADD  $202 ; AC += mem[0x202]
-010c 00 81   LOOP  LD   DADO ; Copia DADO para o acumulador
-010e 0c 01         JP   LOOP ; Fecha o loop
-                   END  INIC ; Indica INIC como endereco de partida do programa;
+                  ORG  $100 
+100 00 00   DADO  CON  0    
+102 20 00    AUX  CON  $20  
+104 02 81   INIC  LD   AUX  ; Primeira instrucao executavel do programa;
+106 02 91         MM   AUX  ; Salva acumulador em AUX
+108 00 42         ADD  $200 ; AC += mem[0x200]
+10A 02 42         ADD  $202 ; AC += mem[0x202]
+10C 00 81   LOOP  LD   DADO ; Copia DADO para o acumulador
+10E 0C 01         JP   LOOP ; Fecha o loop
+                  END  INIC ; Indica INIC como endereco de partida do programa;
