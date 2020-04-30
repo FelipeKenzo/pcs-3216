@@ -1,4 +1,4 @@
-            org     $100
+ORG:        org     $100
         
 DADO:       CON     0
 AUX:        CON     $20     
