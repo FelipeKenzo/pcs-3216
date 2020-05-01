@@ -1,0 +1,60 @@
+///////////////////////////////////////
+//               My ISA              //
+//                   (v1.0)          //
+///////////////////////////////////////
+
+// Memory //:
+* 16-bit addressing (~65kB)
+* 8x16-bit registers (x0 is always zero)
+* PC, SC, SR registers
+
+// Types of operations //:
+* R-Type: register-register operations.
+ ____________________________________
+|___OP___|__RD__|_RS1__|_RS2__|0|_F__|
+   (4)     (3)    (3)    (3)  (1) (2)  
+
+* J-Type: flow control operations.
+ ____________________________________
+|___OP___|_BASE_|________IMM9________|
+   (4)     (3)           (9)
+
+* L-Type: memory access operations.
+ ____________________________________
+|___OP___|__RD__|_BASE_|____off6_____|
+   (4)     (3)    (3)       (9)
+
+// Opcodes list //:
+
+// Arithmetic operations:
+* ADD: 0000 (F = 00);
+* SUB: 0000 (F = 01);
+* MUL: 0000 (F = 10);
+* DIV: 0000 (F = 11);
+
+// Shifting operations:
+* SLL: 0001 (F = 00);
+* SLR: 0001 (F = 01);
+* SRA: 0001 (F = 10);
+
+// Logical operations:
+* AND: 0010 (F = 00);
+* OR : 0010 (F = 01);
+* XOR: 0010 (F = 10);
+
+// Flow control operations:
+* JMP: 0011 (Unconditional Jump);
+* JMZ: 0100 (Jump on Zero);
+* JMN: 0101 (Jump on Negative);
+* BRA: 0110 (Unconditional Branch);
+* BRZ: 0111 (Branch on Zero);
+* BRN: 1000 (Branch on Negative);
+* RSR: 1001 (Return from subroutine);
+* HLT: 1010 (Halt machine);
+* SO : 1011 (System call);
+
+// Memory access operations:
+* LD : 1100 (Load from memory);
+* MM : 1101 (Write to memory);
+
+

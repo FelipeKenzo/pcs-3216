@@ -9,7 +9,8 @@ extern std::map<std::string, symbolData> sTable;
 
 void printUsage() {
     std::cerr << "Usage: assembler <option(s)> source\n\n"
-              << "Options: -o <destination>"
+              << "Options: -o <destination>\n"
+              << "         -v"
               << std::endl;
 }
 
@@ -17,8 +18,7 @@ void printUsage() {
 void printSTable() {
     std::cout << "Symbol Table:\n";
     
-    std::cout << std::internal
-              << std::setfill('0');
+    std::cout << std::internal << std::setfill('0');
     
     std::for_each(sTable.begin(), sTable.end(),
         [](std::pair<std::string, symbolData > element)

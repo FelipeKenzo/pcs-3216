@@ -224,8 +224,8 @@ int main(int argc, char* argv[]) {
             std::cerr << "Error(" << it->second.line << "): label \"" << it->first << "\" used but not defined.\n";
             isError = true;
         }
-        if (it->second.isReferenced) {
-            if (warnings) std::cerr << "Warning(" << it->second.line << ") label \"" << it->first << "\" is not referenced.\n";
+        if (!it->second.isReferenced) {
+            if (warnings) std::cerr << "Warning(" << it->second.line << "): label \"" << it->first << "\" is defined but not referenced.\n";
         }
     }
     

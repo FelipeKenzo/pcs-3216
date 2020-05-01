@@ -23,33 +23,5 @@ struct symbolData {
     bool isReferenced;
 };
 
-// Instructions
-// mnemonicData jp  = {};
-// mnemonicData jz  = {};
-// mnemonicData jne = {};
-// mnemonicData lv  = {};
-// mnemonicData add = {};
-// mnemonicData sub = {};
-// mnemonicData mul = {};
-// mnemonicData dv  = {};
-// mnemonicData ld  = {};
-// mnemonicData mm  = {};
-// mnemonicData sc  = {};
-// mnemonicData rs  = {};
-// mnemonicData hm  = {};
-// mnemonicData gd  = {};
-// mnemonicData pd  = {};
-// mnemonicData os  = {};
-
-// Pseudoinstructions
-// mnemonicData org;
-// mnemonicData end;
-// mnemonicData con;
-
-// Mnemonic Table
-// std::map<std::string, mnemonicData> mTable;
-
-// Symbol Table
-
 
 #endif
