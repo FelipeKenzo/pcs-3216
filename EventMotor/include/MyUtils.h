@@ -23,4 +23,7 @@ std::vector<std::string> split(const std::string& str, char delim);
 // Returns if string ias a number (either hex or dec)
 bool isNumber(const std::string& s);
 
+// returns a main string without a substring
+std::string eraseSubStr(const std::string& mainStr, const std::string &toErase);
+
 #endif

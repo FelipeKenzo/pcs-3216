@@ -1,8 +1,8 @@
-Listing for source file "test.txt".
+Listing for source file "./filesystem/test.txt".
 Note: memory is Little-Endian.
 
                   ORG  $100 
-100 FF 00   DADO  CON  $FF  
+100 FF 0F   DADO  CON  $FFF 
 102 20 00    AUX  CON  $20  
 104 02 81   INIC  LD   AUX  ; Primeira instrucao executavel do programa;
 106 02 91   ABBA  MM   AUX  ; Salva acumulador em AUX

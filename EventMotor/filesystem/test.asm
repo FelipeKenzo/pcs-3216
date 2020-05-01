@@ -1,6 +1,6 @@
             org     $100
         
-DADO:       CON     $FF
+DADO:       CON     $FFF
 AUX:        CON     $20     
 INIC:       LD      AUX     ; Primeira instrucao executavel do programa;
 ABBA:       MM      AUX     ; Salva acumulador em AUX

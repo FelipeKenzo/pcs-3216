@@ -59,3 +59,19 @@ bool isNumber(const std::string& s) {
 
     return true;
 }
+
+std::string eraseSubStr(const std::string & mainStr, const std::string & toErase)
+{
+    std::string newStr = mainStr;
+
+	// Search for the substring in string
+	size_t pos = newStr.find(toErase);
+ 
+	if (pos != std::string::npos)
+	{
+		// If found then erase it from string
+		newStr.erase(pos, toErase.length());
+	}
+
+    return newStr;
+}

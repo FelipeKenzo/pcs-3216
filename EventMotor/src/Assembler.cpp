@@ -68,7 +68,6 @@ bool Assembler::firstStep(std:: ifstream& src) {
     std::string line;                 // Current line
     std::vector<std::string> words;   // Vector with words from line
     
-    std::regex regWhites("\\s+");     // Matches whitespaces
     std::regex regComment("(;.*)");   // Matches a comment
     
     bool isEnd = false;               // Program End flag
@@ -82,7 +81,6 @@ bool Assembler::firstStep(std:: ifstream& src) {
 
         // Line pre-processing:
         line = std::regex_replace(line, regComment, ""); // Remove Comments
-        line = std::regex_replace(line, regWhites, " "); // Reduce whitespaces
         line = uppercase(line);                          // Uppercase all words
         words = split(line, ' ');                        // Extract word vector
 
@@ -250,7 +248,6 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
     std::string line;                 // Current line
     std::vector<std::string> words;   // Vector with words from line
     
-    std::regex regWhites("\\s+");     // Matches whitespaces
     std::regex regComment("(;.*)");   // Matches a comment
     
     bool isEnd = false;               // Program End flag
@@ -283,7 +280,6 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
 
         // Line pre-processing:
         line = std::regex_replace(line, regComment, ""); // Remove Comments
-        line = std::regex_replace(line, regWhites, " "); // Reduce whitespaces
         line = uppercase(line);                          // Uppercase all words
         words = split(line, ' ');                        // Get word vector
 

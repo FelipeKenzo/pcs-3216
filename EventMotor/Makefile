@@ -8,10 +8,10 @@ OBJECTS = $(patsubst $(SRC)/%.cpp, $(BIN)/%.o, $(SOURCES))
 TARGET = event-motor
 
 $(TARGET): $(OBJECTS)
-	g++ $^ -o $@
+	g++ $^ -o $@ -std=c++17
 
 $(BIN)/%.o: %.cpp
-	g++ -c $< -o $@
+	g++ -c $< -o $@ -std=c++17
 
 clean:
 	rm bin/*.o
