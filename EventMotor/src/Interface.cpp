@@ -1,7 +1,7 @@
 #include "../include/Interface.h"
 
 Interface::Interface() {
-    vnm = NULL;
+    vnm = new VonNeumannMachine();
     std::cout << "Event Motor v0.5\n"
               << "Type 'help' for available commands.\n\n";
 }

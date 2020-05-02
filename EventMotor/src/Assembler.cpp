@@ -107,12 +107,12 @@ bool Assembler::firstStep(std:: ifstream& src) {
             // Now we remove the ':' at the end:
             newLabel.pop_back();
 
-            // Was it already defined?
+            // Is it already in the Symbol Table?
             std::map<std::string,symbolData>::const_iterator it = sTable.find(newLabel);
 
             if (it == sTable.end()) {
                 
-                // It wasnt, then we add it to the Symbol Table:
+                // It isn't, then we add it to the Symbol Table:
                 symbolData data = {pc, lc, true, false};
                 sTable[newLabel] = data;
 
@@ -122,11 +122,24 @@ bool Assembler::firstStep(std:: ifstream& src) {
                 //std::cout << labelName << "at line " << lc << "\n";
             }
             else {
-                // label redefinition!
-                std::cerr << "Error(" << lc << "): label redefined , previously defined at line ("
-                          << it->second.line << ").\n";
-                isError = true;
+                // It could be used but still not defined.
+                if (it->second.isDefined) {
+                    std::cerr << "Error(" << lc << "): label redefined , previously defined at line ("
+                            << it->second.line << ").\n";
+                    isError = true;
                 continue;
+                }
+                else
+                {
+                    // In this case, we have to update the label entry:
+                    sTable[newLabel].isDefined = true;
+                    sTable[newLabel].address =  pc;
+                    sTable[newLabel].line = lc;
+
+                    // And remove it from word vector:
+                    words.erase(words.begin()); // It is inefficient, but our vector is small.
+                }
+                
             }
         }
 
@@ -173,15 +186,17 @@ bool Assembler::firstStep(std:: ifstream& src) {
             // Is the operand a number?
             if (isNumber(operand)) {
                 
-                uint addr;
+                uint64_t addr;
                 if (operand[0] == '$') addr = htoi(operand);  // operand in HEX
                 else addr = std::stoi(operand);               // operand in DEC
 
                 // Checks if valid operand
-                if (mnemonic == "CON" && addr > 0xFFFF) {
-                    std::cerr << "Error(" << lc << "): invalid operand value.\n";
-                    isError = true;
+                if (mnemonic == "CON") {
+                        if (addr > 0xFFFF) {
+                        std::cerr << "Error(" << lc << "): invalid operand value.\n";
+                        isError = true;
                     continue;
+                    }
                 }
                 else if (addr > 0xFFF) {
                     std::cerr << "Error(" << lc << "): invalid operand value.\n";
@@ -200,7 +215,7 @@ bool Assembler::firstStep(std:: ifstream& src) {
 
                 if (it == sTable.end()) {
                     // It wasnt, then we add it to the Symbol Table;
-                    symbolData data = {pc, lc, false, true};
+                    symbolData data = {0, 0, false, true};
                     sTable[operand] = data;
                 }
                 else {
@@ -316,7 +331,7 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         // Calculate machine code
         if (mTable[mnemonic].size == 2) {
             code = mTable[mnemonic].opcode << 12;
-
+            
             if (isNumber(operand)) {
                 if (operand[0] == '$') code = code | htoi(operand);
                 else code = code | std::stoi(operand);
@@ -326,7 +341,7 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
             }
 
             // To Little Endian
-            code = (code << 8) | (code >> 8);
+            //code = (code << 8) | (code >> 8);
         }
 
         // Output to vnc file:

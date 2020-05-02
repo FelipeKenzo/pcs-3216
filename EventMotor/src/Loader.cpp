@@ -39,7 +39,7 @@ void Loader::load(VonNeumannMachine* vnm, std::string filepath) {
 
         // std::cout << std::hex << start << "\n";
         // std::cout << std::hex << size  << "\n";
-        // std::cout << std::hex << data  << "\n";
+        //  std::cout << std::hex << data  << "\n";
         // std::cout << std::hex << chks  << " and " << std::hex << calculateCheksum(start, size, data) << "\n";
 
         if (chks != calculateCheksum(start, size, data)) {
@@ -47,10 +47,13 @@ void Loader::load(VonNeumannMachine* vnm, std::string filepath) {
             return;
         }
 
-        for (int i = 0; i < size; i += 2) {
-            //std::cout << std::hex << start << "\n";
-            start += i;
-            vnm->memWrite_w(start, (data >> (8*i)) & 0xFFFF);
+        for (int i = 0; i < size; i += 4) {
+            // std::cout << std::hex << start << ": "
+            //           << std::right << std::setfill('0')
+            //           << std::setw(4) << std::hex << ((data >> 4*(size-4-i)) & 0xFFFF)
+            //           << "\n";
+            vnm->memWrite_w(start, ((data >> 4*(size-4-i)) & 0xFFFF));
+            start += 2; 
         }
     }
 }

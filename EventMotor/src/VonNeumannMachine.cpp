@@ -11,175 +11,102 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     uint16_t op = (instr >> 12);    // opcode
     uint16_t pa = (instr & 0x0FFF); // parameter
 
+    if(debug) {
+        std::cout << "---------------------------\n"
+                  << "0x" << std::right << std::setfill('0') 
+                  << std::setw(3) << std::hex << reg[pc]-2 << "  "
+                  << std::setw(2) << std::hex << (uint16_t)mem[reg[pc] - 2] << " "
+                  << std::setw(2) << std::hex << (uint16_t)mem[reg[pc] - 1] << "  ";
+    }
+
     switch(op) {
         case JP:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "JP   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "JP  ";
             reg[pc] = pa;
             break;
         case JZ:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "JZ   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "JZ  ";
             if (reg[ac] == 0) reg[pc] = pa;
             break;
         case JN:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "JN   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "JN  ";
             if (reg[ac < 0]) reg[pc] = pa;
             break;
         case LV:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "LV   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "LV  ";
             reg[ac]  = memRead(pa);
             break;
         case ADD:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "ADD  " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "ADD ";
             reg[ac] += memRead(pa);
             break;
         case SUB:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "SUB  " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "SUB ";
             reg[ac] -= memRead(pa);
             break;
         case MUL:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "MUL  " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "MUL ";
             reg[ac] *= memRead(pa);
             break;
         case DIV:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "DIV  " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "DIV ";
             reg[ac] /= memRead(pa);
             break;
         case LD:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "LD   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "LD  ";
             reg[ac]  = memRead(pa);
             break;
         case MM:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "MM   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "MM  ";
             memWrite_w(pa, reg[ac]);
             break;
         case SC:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "SC   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "SC  ";
             memWrite_w(reg[sp], reg[pc]);
             reg[sp] -= 2;
             reg[pc] = pa;
             break;
         case RS:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "RS   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "RS  ";
             reg[sp] += 2;
+            // std::cout << std::hex << reg[sp] << "\n";
+            // std::cout << std::hex << memRead(reg[sp]) << "\n";
             reg[pc] = memRead(reg[sp]);
             break;
         case HM:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "HM   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "HM  ";
             halt();
             reg[pc] = pa;
             break;
         case GD:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "GD   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "GD  ";
             reg[ac] = input();
             break;
         case PD:
-            if (debug) {
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::right << std::setfill('0') << std::setw(4) << std::hex << reg[pc]-2 << "  "
-                          << "PD   "    << std::right << std::setfill('0') << std::setw(4) << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "PD  ";
             std::cout << std::internal << std::setfill('0');
             std::cout << "Accumulator: 0x" << std::uppercase
                         << std::setw(4) << std::hex << reg[ac]
                         << std::endl;
             break;
         case OS:
-            if (debug) {
-                std::cout << std::right << std::setfill('0') << std::setw(4);
-                std::cout << "---------------------------\n"
-                          << "addr: 0x" << std::hex << reg[pc]-2 << "  "
-                          << "OS   " << std::hex << pa << "\n"
-                          << "---------------------------\n";
-            }
+            if (debug) std::cout << "OS  ";
             std::cout << "System call not implemented.\n";
             break;
             
-    }   
+    }
+
+    if (debug) {
+        std::cout << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << pa << "\n"
+                  << "pc: 0x" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << reg[pc] << "\n"
+                  << "sp: 0x" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << reg[sp] << "\n"
+                  << "ac: 0x" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << reg[ac] << "\n"
+                  << "---------------------------";
+    }
 }
 
 void VonNeumannMachine::run(uint16_t addr) {
@@ -209,9 +136,8 @@ void VonNeumannMachine::step(uint16_t addr) {
 
         executeInstruction(instr, true);
 
-        std::cin >> input;
 
-    } while (!halted && input != "halt");
+    } while(std::getline(std::cin, input) && !halted && input != "halt");
 }
 
 void VonNeumannMachine::halt() {

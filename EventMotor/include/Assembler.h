@@ -79,7 +79,7 @@ private:
     std::map<std::string, mnemonicData> mTable = {
         {"JP" ,  jp}, {"JZ" ,  jz}, {"JN" , jne}, {"LV" ,  lv},
         {"ADD", add}, {"SUB", sub}, {"MUL", mul}, {"DIV",  dv},
-        {"LD" ,  ld}, {"MM" ,  mm}, {"SC" ,  sc}, {"RS" ,  jp},
+        {"LD" ,  ld}, {"MM" ,  mm}, {"SC" ,  sc}, {"RS" ,  rs},
         {"HM" ,  hm}, {"GD" ,  gd}, {"PD" ,  pd}, {"OS" ,  os},
         {"ORG", org}, {"END", end}, {"CON", con}
     };
