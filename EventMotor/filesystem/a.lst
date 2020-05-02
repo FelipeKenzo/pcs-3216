@@ -1,0 +1,10 @@
+Listing for source file "./filesystem/test.asm".
+Note: memory is Little-Endian.
+
+                  ORG  $100 
+100 01 00   DADO  CON  $01  
+102 00 81   INIC  LD   DADO ; Primeira instrucao executavel do programa;
+104 00 41         ADD  DADO ; AC += mem[DADO]
+106 FF E0         PD   $FF  ; Print Data
+108 02 C1         HM   INIC ; Halts
+                  END  INIC ; Indica INIC como endereco de partida do programa;

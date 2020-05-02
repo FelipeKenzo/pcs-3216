@@ -10,27 +10,30 @@
 #include <locale>     // for input parsing (uppercase)
 #include <algorithm>  // for input parsing (transform)
 
+#include "../include/MyUtils.h"
+
 #define MEM_SIZE 4096 // 4KB
 
 class VonNeumannMachine {
 private:
     // Memory
-    int8_t mem[MEM_SIZE] = {0}; // note: Little Endian
+    uint8_t mem[MEM_SIZE] = {0}; // note: Little Endian
     
     // Registers
-    int16_t reg[2] = {0};
     enum {
         ac = 0, // Accumulator
         pc,     // Program Counter
-        sp
+        sp,
+        reg_num
     };
     
-    // Flags
+    uint16_t reg[reg_num] = {0};
+    
+    // Halt flags
     bool halted = false;
 
-
     // Breakpoints
-    std::list<int16_t>* breakpoints;
+    std::list<uint16_t>* breakpoints;
     
     // Opcodes
     enum {
@@ -52,16 +55,17 @@ private:
         OS      // OPERATING SYSTEM CALL
     };
 
-    // Utilities
     uint16_t input();
-    int16_t intPow16(int16_t exp);
+    void executeInstruction(uint16_t instr, bool debug);
 
 public:
     VonNeumannMachine();
-    void run();
+    void run(uint16_t addr);
+    void step(uint16_t addr);
     void halt();
-    int16_t memRead(int16_t addr);
-    void memWrite_w(int16_t addr, int16_t data);
+    uint16_t* getRegisters();
+    uint16_t memRead(uint16_t addr);
+    void memWrite_w(uint16_t addr, uint16_t data);
 };
 
 #endif

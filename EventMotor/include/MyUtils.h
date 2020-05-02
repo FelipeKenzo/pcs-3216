@@ -8,14 +8,8 @@
 #include <vector>
 #include <cstdint>
 
-// Converts string to uppercase
-std::string uppercase(const std::string& s);
-
 // Converts ascci hex to int
-std::uint16_t htoi(const std::string& hex);
-
-// Returns 16^exp
-int16_t pow16 (int16_t exp);
+std::uint64_t htoi(const std::string& hex);
 
 // Splits string into vector of words
 std::vector<std::string> split(const std::string& str, char delim);
@@ -25,5 +19,8 @@ bool isNumber(const std::string& s);
 
 // returns a main string without a substring
 std::string eraseSubStr(const std::string& mainStr, const std::string &toErase);
+
+// Calculates cheksum
+uint16_t calculateCheksum(uint16_t addr, uint16_t size, uint64_t data);
 
 #endif

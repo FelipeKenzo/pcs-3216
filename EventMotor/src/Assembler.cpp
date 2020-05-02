@@ -80,9 +80,9 @@ bool Assembler::firstStep(std:: ifstream& src) {
         lc++;
 
         // Line pre-processing:
-        line = std::regex_replace(line, regComment, ""); // Remove Comments
-        line = uppercase(line);                          // Uppercase all words
-        words = split(line, ' ');                        // Extract word vector
+        line = std::regex_replace(line, regComment, "");                    // Remove Comments
+        std::transform(line.begin(), line.end(), line.begin(), ::toupper);  // Uppercase line
+        words = split(line, ' ');                                           // Extract word vector
 
         // Skip empty lines:
         if (words.size() == 0) continue;
@@ -173,12 +173,17 @@ bool Assembler::firstStep(std:: ifstream& src) {
             // Is the operand a number?
             if (isNumber(operand)) {
                 
-                int16_t addr;
+                uint addr;
                 if (operand[0] == '$') addr = htoi(operand);  // operand in HEX
                 else addr = std::stoi(operand);               // operand in DEC
 
                 // Checks if valid operand
-                if (addr > 0xFFF) {
+                if (mnemonic == "CON" && addr > 0xFFFF) {
+                    std::cerr << "Error(" << lc << "): invalid operand value.\n";
+                    isError = true;
+                    continue;
+                }
+                else if (addr > 0xFFF) {
                     std::cerr << "Error(" << lc << "): invalid operand value.\n";
                     isError = true;
                     continue;
@@ -279,11 +284,11 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         comment = match[1];
 
         // Line pre-processing:
-        line = std::regex_replace(line, regComment, ""); // Remove Comments
-        line = uppercase(line);                          // Uppercase all words
-        words = split(line, ' ');                        // Get word vector
+        line = std::regex_replace(line, regComment, "");                    // Remove Comments
+        std::transform(line.begin(), line.end(), line.begin(), ::toupper);  // Uppercase all words
+        words = split(line, ' ');                                           // Get word vector
 
-        if (words.size() == 0 ) continue;                // ignore white lines
+        if (words.size() == 0 ) continue;                                   // ignore blank lines
 
         // save and delete labels
         if (words.size() > 2) {
@@ -340,7 +345,8 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         }
         
         // End block and write to vnc file
-        if ((size == 16 || mnemonic == "ORG" || isEnd) && addr) {
+        //std::cout << size << "\n";
+        if ((size == 12 || mnemonic == "ORG" || isEnd) && addr) {
             //std::cout << "ENTRI\n";
             //std::cout << size << "\n";
             vnc << std::right << std::setfill('0') <<  std::uppercase
@@ -348,33 +354,16 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
                 << std::setw(1) << size              // write size
                 << std::setw(size) << data;          // write data
 
-            // Calculate checksum
-            // Sum all nibbles
-            while (addr) {
-                chks += addr & 0xF;
-                addr = addr >> 4;
-            }
-            while(size) {
-                chks += size & 0xF;
-                size = size >> 4;
-            }
-            while (data) {
-                chks += data & 0xF;
-                data = data >> 4;
-            }
-            
-            //std::cout << std::hex << chks << "\n";
-
-            // One's complement
-            chks = 0xFFFF - chks;
-            // Isolate last byte
-            chks = chks & 0x00FF;
+            chks = calculateCheksum(addr, size, data);
             
             // Write checksum
             vnc << std::right << std::setfill('0') <<  std::uppercase
                 << std::setw(2) << std::hex  << chks << "\n";
             
             chks = 0;
+            addr = 0;
+            size = 0;
+            data = 0;
         }
         
         // Output to lst file:

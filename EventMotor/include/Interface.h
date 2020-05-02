@@ -8,19 +8,27 @@
 #include <regex>
 #include <filesystem>
 #include <cstdio>
+#include <fstream>
 
 #include "VonNeumannMachine.h"
 #include "Assembler.h"
+#include "Loader.h"
 
 class Interface {
 private:
-    VonNeumannMachine* vnm;
+    VonNeumannMachine* vnm = NULL;
     void exitMessage();
     void helpMessage();
     void assembleSrc(std::string src, std::string out, bool w);
-    void run(std::string file);
+    void runVnm(std::string addr);
+    void stepVnm(std::string addr);
     void listFiles();
     void removeFiles(std::vector<std::string> files);
+    void showVnmStatus();
+    void vnmTurnOn();
+    void vnmTurnOff();
+    void loadProgram(std::string vnc);
+    void printFile(std::string file);
 
     enum command {
         invalid,
@@ -28,10 +36,28 @@ private:
         assemble,
         help,
         ls,
-        rm
+        rm,
+        status,
+        turn,
+        load,
+        run,
+        print,
+        step
     };
 
-    std::map<std::string, command> commandMap; 
+    std::map<std::string, command> commandMap = {
+        {"exit", exit},
+        {"assemble", assemble},
+        {"help", help},
+        {"ls", ls},
+        {"rm", rm},
+        {"status", status},
+        {"turn", turn},
+        {"load", load},
+        {"run", run},
+        {"print", print},
+        {"step", step}
+    }; 
 
 public:
     Interface();
