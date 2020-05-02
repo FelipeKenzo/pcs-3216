@@ -2,7 +2,13 @@
 
 Interface::Interface() {
     vnm = new VonNeumannMachine();
-    std::cout << "Event Motor v0.5\n"
+    std::cout << "__     __          _   _                                         __     ____  __ \n"
+              << "\\ \\   / /__  _ __ | \\ | | ___ _   _ _ __ ___   __ _ _ __  _ __   \\ \\   / /  \\/  |\n"
+              << " \\ \\ / / _ \\| '_ \\|  \\| |/ _ \\ | | | '_ ` _ \\ / _` | '_ \\| '_ \\   \\ \\ / /| |\\/| |\n"
+              << "  \\ V / (_) | | | | |\\  |  __/ |_| | | | | | | (_| | | | | | | |   \\ V / | |  | |\n"
+              << "   \\_/ \\___/|_| |_|_| \\_|\\___|\\__,_|_| |_| |_|\\__,_|_| |_|_| |_|    \\_/  |_|  |_|\n"
+              << "\n"                                                                    
+              << "                                                                     --Ver. 1.0--\n\n"
               << "Type 'help' for available commands.\n\n";
 }
 
@@ -50,7 +56,7 @@ void Interface::input() {
                     }
                 }
                 else {
-                    std::cout << "assemble [source] [-w | --warning] [-o][outname].\n";
+                    std::cout << "assemble [source]* [-w|--warning] [-o outname].\n";
                     break;
                 }
 
@@ -72,6 +78,9 @@ void Interface::input() {
 
                     removeFiles(argv);
                 }
+                else {
+                    std::cerr << "turn [file(1)]* ... [file(n)]\n";
+                }
                 break;
             
             case status:
@@ -84,7 +93,7 @@ void Interface::input() {
                     else if (argv[1] == "off") vnmTurnOff();
                 }
                 else {
-                    std::cerr << "turn [on|off]\n";
+                    std::cerr << "turn [on|off]*\n";
                 }
                 break;
 
@@ -93,7 +102,7 @@ void Interface::input() {
                     loadProgram("./filesystem/" + argv[1]);
                 }
                 else {
-                    std::cerr << "load [program]\n";
+                    std::cerr << "load [program]*\n";
                 }
                 break;
 
@@ -102,7 +111,7 @@ void Interface::input() {
                     runVnm(argv[1]);
                 }
                 else {
-                    std::cerr << "run [startAddress]\n";
+                    std::cerr << "run [startAddress]*\n";
                 }
                 break;
 
@@ -111,7 +120,7 @@ void Interface::input() {
                     stepVnm(argv[1]);
                 }
                 else {
-                    std::cerr << "step [startAddress]\n";
+                    std::cerr << "step [startAddress]*\n";
                 }
                 break;
 
@@ -140,15 +149,35 @@ void Interface::assembleSrc(std::string src, std::string out, bool w) {
 }
 
 void Interface::helpMessage() {
-    std::cout << "\n-----Help-----\n\n"
-              << "Valid commands ('*' indicates mandatory parameter):\n\n"
-              << "help: displays this help message.\n\n"
-              << "assemble: assembles a .txt source file into a .vnc hex file and .lst list file.\n"
+    std::cout << "Note: parameters with '*' are mandatory.\n\n"
+              << "assemble: assembles a .asm source file into a .vnc hex file and .lst list file.\n"
+              << "usage: assemble [source]* [-w|--warning] [-o outname]\n"
               << "      [source]*        source file name (with extension)\n"
               << "      [-w | --warning] show warning messages\n"
               << "      [-o][outname]    output name (without extension)\n\n"
-              << "ls: list files in filesystem.\n\n"
-              << "exit: exits program.\n\n"; 
+              << "exit: exits program.\n\n" 
+              << "help: displays this help message.\n\n"
+              << "load: loads a program into the VNM.\n"
+              << "usage: load [program]\n"
+              << "      [program]*       program file name (with extension)\n\n"
+              << "ls: list files in the filesystem.\n\n"
+              << "print: prints the contents of a file to the terminal.\n"
+              << "usage: print [file]*\n"
+              << "      [file]*          file name (with extension)\n\n"
+              << "rm: removes (deletes) file(s) from the filesystem.\n"
+              << "usage: rm [file(1)]* ... [file(n)]\n"
+              << "      [file(n)]*       file names to be deleted.\n\n"
+              << "run: runs the VM at the the memory location specified.\n"
+              << "usage: run [startAddress]*\n"
+              << "      [startAddress]   start address for the simulation. Must be lower than $FFE.\n"
+              << "                       can be in etiher decimal or hexadecimal (starting with '$').\n\n"
+              << "status: shows the current status of the Von Neumann Machine.\n\n"
+              << "step: steps throught the execution of the Von Neumann Machine. Typing 'halt' aborts.\n"
+              << "      [startAddress]   start address for the simulation. Must be lower than $FFE.\n"
+              << "                       can be in etiher decimal or hexadecimal (starting with '$').\n\n"
+              << "turn: turns the Von Neumann Machine ON or OFF.\n"
+              << "usage: turn [ON|OFF]*\n"
+              << "      [ON|OFF]         state for the Machine. Must be either one of the options.\n\n";
 }
 
 void Interface::exitMessage() {
@@ -261,7 +290,7 @@ void Interface::stepVnm(std::string addr) {
     }
 
     if(!isNumber(addr)) {
-        std::cerr << "run: invalid start address.\n";
+        std::cerr << "step: invalid start address.\n";
         return;
     }
 
@@ -269,7 +298,7 @@ void Interface::stepVnm(std::string addr) {
     else start = std::stoi(addr);
 
     if (start > 0xFFF) {
-        std::cerr << "run: invalid start address.\n";
+        std::cerr << "step: invalid start address.\n";
         return;
     }
 
