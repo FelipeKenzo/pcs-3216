@@ -1,11 +1,14 @@
             org     $100
             jp      init    ; goes to init
+;Data Area
 const1:     con     $0      ; const1 = 0
 const2:     con     $1      ; const2 = 1
 const3:     con     $FFFF   ; const3 = $FFFF (-1)
 const4:     con     $ef0    ; const4 = $EF0
 const5:     con     $3      ; const5 = 3
 var1:       con     $0      ; var1 = 0
+
+;Program Start
 init:       ld      const2  ; ac = 1
             jz      jz      ; jump to "jz" if acc = 0 (shouldn't)
             ld      const1  ; ac = 0
