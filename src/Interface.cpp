@@ -110,9 +110,10 @@ void Interface::input() {
                 if (argc == 2) {
                     runVnm(argv[1]);
                 }
-                else {
-                    std::cerr << "run [startAddress]*\n";
+                else if (argc == 1){
+                    runVnm("");
                 }
+                std::cerr << "run [startAddress]\n";
                 break;
 
             case step:
@@ -120,8 +121,9 @@ void Interface::input() {
                     stepVnm(argv[1]);
                 }
                 else {
-                    std::cerr << "step [startAddress]*\n";
+                    stepVnm("");
                 }
+                std::cerr << "step [startAddress]*\n";
                 break;
 
             case print:
@@ -130,6 +132,15 @@ void Interface::input() {
                 }
                 else {
                     std::cerr << "print [file]\n";
+                }
+                break;
+
+            case set:
+                if (argc == 3) {
+                    setReg(argv[1], argv[2]);
+                }
+                else {
+                    std::cerr << "set [reg] [data]\n";
                 }
                 break;
             
@@ -168,7 +179,7 @@ void Interface::helpMessage() {
               << "usage: rm [file(1)]* ... [file(n)]\n"
               << "      [file(n)]*       file names to be deleted.\n\n"
               << "run: runs the VM at the the memory location specified.\n"
-              << "usage: run [startAddress]*\n"
+              << "usage: run [startAddress]\n"
               << "      [startAddress]   start address for the simulation. Must be lower than $FFE.\n"
               << "                       can be in etiher decimal or hexadecimal (starting with '$').\n\n"
               << "status: shows the current status of the Von Neumann Machine.\n\n"
@@ -266,6 +277,11 @@ void Interface::runVnm(std::string addr) {
         return;
     }
 
+    if (addr == "") {
+        vnm->run();
+        return;
+    }
+
     if(!isNumber(addr)) {
         std::cerr << "run: invalid start address.\n";
         return;
@@ -279,7 +295,8 @@ void Interface::runVnm(std::string addr) {
         return;
     }
 
-    vnm->run(start);
+    vnm->setRegister(0,start);
+    vnm->run();
 }
 
 void Interface::stepVnm(std::string addr) {
@@ -289,6 +306,11 @@ void Interface::stepVnm(std::string addr) {
         return;
     }
 
+    if (addr == "") {
+        vnm->run();
+        return;
+    }
+
     if(!isNumber(addr)) {
         std::cerr << "step: invalid start address.\n";
         return;
@@ -302,7 +324,8 @@ void Interface::stepVnm(std::string addr) {
         return;
     }
 
-    vnm->step(start);
+    vnm->setRegister(0,start);
+    vnm->step();
 }
 
 
@@ -321,4 +344,37 @@ void Interface::printFile(std::string path) {
     }
 
     return;
+}
+
+void Interface::setReg(std::string reg, std::string data) {
+    uint16_t regNumber;
+    uint32_t dataValue;
+
+    if (reg == "ac") regNumber = 0;
+    else if (reg == "pc") regNumber = 1;
+    else if (reg == "sp") regNumber = 1;
+    else {
+        std::cerr << "setReg: invalid register.\n";
+        return;
+    }
+    
+    if (vnm == NULL) {
+        std::cout << "Von Neumann Machine is OFF.\n";
+        return;
+    }
+    
+    if (!isNumber(data)) {
+        std::cerr << "setReg: invalid data value\n";
+        return;
+    }
+
+    if (data[0] == '$') dataValue = htoi(data);
+    else dataValue = std::stoi(data);
+
+    if (dataValue > 0xFFFF) {
+        std::cerr << "setReg: invalid data value\n";
+        return;
+    }
+
+    vnm->setRegister(regNumber, dataValue);
 }

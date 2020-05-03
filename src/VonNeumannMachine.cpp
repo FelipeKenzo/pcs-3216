@@ -109,10 +109,8 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     }
 }
 
-void VonNeumannMachine::run(uint16_t addr) {
+void VonNeumannMachine::run() {
     halted = false;
-
-    reg[pc] = addr;
 
     while (!halted) {
         // Fetch instruction
@@ -123,9 +121,8 @@ void VonNeumannMachine::run(uint16_t addr) {
     }
 }
 
-void VonNeumannMachine::step(uint16_t addr) {
+void VonNeumannMachine::step() {
     halted = false;
-    reg[pc] = addr;
 
     std::string input;
 
@@ -142,6 +139,14 @@ void VonNeumannMachine::step(uint16_t addr) {
 
 void VonNeumannMachine::halt() {
     halted = true;
+}
+
+void VonNeumannMachine::setRegister(uint16_t reg, uint16_t data) {
+    if (reg >= reg_num) {
+        std::cerr << "invalid register.\n";
+    }
+
+    this->reg[reg] = data;
 }
 
 uint16_t VonNeumannMachine::memRead(uint16_t addr) {

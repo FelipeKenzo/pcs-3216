@@ -29,6 +29,7 @@ private:
     void vnmTurnOff();
     void loadProgram(std::string vnc);
     void printFile(std::string file);
+    void setReg(std::string reg, std::string random_data);
 
     enum command {
         invalid,
@@ -42,7 +43,8 @@ private:
         load,
         run,
         print,
-        step
+        step,
+        set
     };
 
     std::map<std::string, command> commandMap = {
@@ -56,7 +58,8 @@ private:
         {"load", load},
         {"run", run},
         {"print", print},
-        {"step", step}
+        {"step", step},
+        {"set", set}
     }; 
 
 public:

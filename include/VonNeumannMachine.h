@@ -17,7 +17,7 @@
 class VonNeumannMachine {
 private:
     // Memory
-    uint8_t mem[MEM_SIZE] = {0}; // note: Little Endian
+    uint8_t mem[MEM_SIZE] = {0};
     
     // Registers
     enum {
@@ -60,9 +60,10 @@ private:
 
 public:
     VonNeumannMachine();
-    void run(uint16_t addr);
-    void step(uint16_t addr);
+    void run();
+    void step();
     void halt();
+    void setRegister(uint16_t reg, uint16_t data);
     uint16_t* getRegisters();
     uint16_t memRead(uint16_t addr);
     void memWrite_w(uint16_t addr, uint16_t data);
