@@ -16,6 +16,7 @@
 class Interface {
 private:
     VonNeumannMachine* vnm = NULL;
+    void loadLoader();
     void exitMessage();
     void helpMessage();
     void assembleSrc(std::string src, std::string out, bool w);

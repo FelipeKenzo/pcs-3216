@@ -8,8 +8,8 @@
 
 int main (int argc, char* argv[]) {
     
-    Interface i = Interface();
-    i.input();
+    Interface* i = new Interface();
+    i->input();
 
     return 0;
 }

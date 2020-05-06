@@ -188,8 +188,12 @@ uint16_t VonNeumannMachine::readInput() {
 }
 
 void VonNeumannMachine::writeOutput() {
-    std::cout << "output: " << std::setfill('0') << std::setw(2)
-              << std::right << std::hex << (uint)ac << "\n";
+    // std::cout << "output: " << std::setfill('0') << std::setw(2)
+    //           << std::right << std::hex << (uint)ac << "\n";
+
+    //std::cout << (*output).is_open() << "\n";
+
     (*output) << std::setfill('0') << std::setw(2)
-              << std::right << std::hex << (uint)ac;
+              << std::right << std::uppercase << std::hex << (uint)ac;
+    (*output).flush();
 }

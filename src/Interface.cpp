@@ -6,42 +6,7 @@ Interface::Interface() {
     outFile.open("./filesystem/output.txt");
 
     vnm = new VonNeumannMachine(&inFile, &outFile);
-
-    // Loads loader
-    vnm->memWrite_w(0x00, 0x0006);
-    vnm->memWrite_w(0x02, 0x0001);
-    vnm->memWrite_w(0x04, 0x9000);
-    vnm->memWrite_w(0x06, 0xD000);
-    vnm->memWrite_w(0x08, 0x4004);
-    vnm->memWrite_w(0x0A, 0x9026);
-    vnm->memWrite_w(0x0C, 0x5004);
-    vnm->memWrite_w(0x0E, 0x101A);
-    vnm->memWrite_w(0x10, 0xD000);
-    vnm->memWrite_w(0x12, 0x9027);
-    vnm->memWrite_w(0x14, 0xD000);
-    vnm->memWrite_w(0x16, 0x9002);
-    vnm->memWrite_w(0x18, 0x0024);
-    vnm->memWrite_w(0x1A, 0xD000);
-    vnm->memWrite_w(0x1C, 0x1022);
-    vnm->memWrite_w(0x1E, 0x9027);
-    vnm->memWrite_w(0x20, 0x0014);
-    vnm->memWrite_w(0x22, 0xC000);
-    vnm->memWrite_w(0x24, 0xD000);
-    vnm->memWrite_w(0x26, 0x9000);
-    vnm->memWrite_w(0x28, 0x8027);
-    vnm->memWrite_w(0x2A, 0x4003);
-    vnm->memWrite_w(0x2C, 0x9027);
-    vnm->memWrite_w(0x2E, 0x103A);
-    vnm->memWrite_w(0x30, 0x8002);
-    vnm->memWrite_w(0x32, 0x5003);
-    vnm->memWrite_w(0x34, 0x9002);
-    vnm->memWrite_w(0x36, 0x1006);
-    vnm->memWrite_w(0x38, 0x0024);
-    vnm->memWrite_w(0x3A, 0x8026);
-    vnm->memWrite_w(0x3C, 0x4003);
-    vnm->memWrite_w(0x3E, 0x9026);
-    vnm->memWrite_w(0x40, 0x0030);
-
+    loadLoader();
 
     std::cout << "__     __          _   _                                         __     ____  __ \n"
               << "\\ \\   / /__  _ __ | \\ | | ___ _   _ _ __ ___   __ _ _ __  _ __   \\ \\   / /  \\/  |\n"
@@ -272,7 +237,10 @@ void Interface::removeFiles(std::vector<std::string> files) {
 
 void Interface::vnmTurnOn() {
     if (vnm == NULL) {
+        inFile.open("./filesystem/input.txt");
+        outFile.open("./filesystem/output.txt");
         vnm = new VonNeumannMachine(&inFile, &outFile);
+        loadLoader();
         std::cout << "Von Neumann Machine was turned ON.\n";
     }
     else {
@@ -286,6 +254,8 @@ void Interface::vnmTurnOff() {
         std::cout << "Von Neumann Machine is already OFF.\n";
     }
     else {
+        inFile.close();
+        outFile.close();
         delete vnm;
         vnm = NULL;
         std::cout << "Von Neumann Machine was turned ON.\n";
@@ -439,4 +409,40 @@ void Interface::setReg(std::string reg, std::string data) {
         std::cerr << "setReg: invalid register.\n";
         return;
     }
+}
+
+void Interface::loadLoader() {
+    vnm->memWrite_w(0x00, 0x0006);
+    vnm->memWrite_w(0x02, 0x0001);
+    vnm->memWrite_w(0x04, 0x9000);
+    vnm->memWrite_w(0x06, 0xD000);
+    vnm->memWrite_w(0x08, 0x4004);
+    vnm->memWrite_w(0x0A, 0x9026);
+    vnm->memWrite_w(0x0C, 0x5004);
+    vnm->memWrite_w(0x0E, 0x101A);
+    vnm->memWrite_w(0x10, 0xD000);
+    vnm->memWrite_w(0x12, 0x9027);
+    vnm->memWrite_w(0x14, 0xD000);
+    vnm->memWrite_w(0x16, 0x9002);
+    vnm->memWrite_w(0x18, 0x0024);
+    vnm->memWrite_w(0x1A, 0xD000);
+    vnm->memWrite_w(0x1C, 0x1022);
+    vnm->memWrite_w(0x1E, 0x9027);
+    vnm->memWrite_w(0x20, 0x0014);
+    vnm->memWrite_w(0x22, 0xC000);
+    vnm->memWrite_w(0x24, 0xD000);
+    vnm->memWrite_w(0x26, 0x9000);
+    vnm->memWrite_w(0x28, 0x8027);
+    vnm->memWrite_w(0x2A, 0x4003);
+    vnm->memWrite_w(0x2C, 0x9027);
+    vnm->memWrite_w(0x2E, 0x103A);
+    vnm->memWrite_w(0x30, 0x8002);
+    vnm->memWrite_w(0x32, 0x5003);
+    vnm->memWrite_w(0x34, 0x9002);
+    vnm->memWrite_w(0x36, 0x1006);
+    vnm->memWrite_w(0x38, 0x0024);
+    vnm->memWrite_w(0x3A, 0x8026);
+    vnm->memWrite_w(0x3C, 0x4003);
+    vnm->memWrite_w(0x3E, 0x9026);
+    vnm->memWrite_w(0x40, 0x0030);
 }
