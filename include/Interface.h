@@ -10,9 +10,8 @@
 #include <cstdio>
 #include <fstream>
 
-#include "VonNeumannMachine.h"
+#include "../include/VonNeumannMachine.h"
 #include "Assembler.h"
-#include "Loader.h"
 
 class Interface {
 private:
@@ -31,20 +30,13 @@ private:
     void printFile(std::string file);
     void setReg(std::string reg, std::string random_data);
 
+    std::ifstream inFile;
+    std::ofstream outFile;
+
     enum command {
-        invalid,
-        exit,
-        assemble,
-        help,
-        ls,
-        rm,
-        status,
-        turn,
-        load,
-        run,
-        print,
-        step,
-        set
+        invalid, exit, assemble, help, ls,
+        rm, status, turn, load, run, print,
+        step, set
     };
 
     std::map<std::string, command> commandMap = {

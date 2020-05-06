@@ -1,0 +1,36 @@
+Listing for source file "./filesystem/loader.asm".
+Note: memory is Little-Endian.
+
+000 00 04             JP   START    ; Jumps data area to first instruction
+002 00       COUNTER  CON  $00      ; Counts number of bytes of data to be read
+003 01           ONE  CON  $01      ; 1 constant
+004 D0 00      START  GD            ; Reads first address byte from file
+006 40 24             ADD  WRITE_1  ; Adds upper address to write_1
+008 90 24             MM   WRITE_1  ; Writes result to write_1
+00A 50 90             SUB  $90      ; Subtracts MM opcode
+00C 10 18             JZ   ZERO_1   ; If equals to zero, we jump to zero_1 and continue to read the address
+00E D0 00             GD            ; Reads second byte from file
+010 90 25             MM   WRITE_2  ; Writes to write_2
+012 D0 00   READSIZE  GD            ; Reads byte count from file
+014 90 02             MM   COUNTER  ; Writes byte count to counter
+016 00 22             JP   LOOP     ; Jumps to memory write loop.
+018 D0 00     ZERO_1  GD            ; Reads second byte from file
+01A 10 20             JZ   ZERO_2   ; If also zero, we reached end of program, halt loader.
+01C 90 25             MM   WRITE_2  ; Writes to write_2
+01E 00 12             JP   READSIZE ; goes back to reading 
+020 C0 00     ZERO_2  HM   $000     ; Halts machine, end of program.
+022 D0 00       LOOP  GD            ; Reads a byte of data
+024 90       WRITE_1  CON  $90      ; MM first byte (will be read as instruction)
+025 00       WRITE_2  CON  $00      ; MM second byte (will be read as instruction)
+026 80 25             LD   WRITE_2  ; Loads MM second byte (lower address byte)
+028 40 03             ADD  ONE      ; write_2 += 1
+02A 10 36             JZ   ADDUPPER ; jumps to addUpper (adds one to upper address byte)  
+02C 80 02    WRITE_3  LD   COUNTER  ; Loads value from counter
+02E 50 03             SUB  ONE      ; Counter--
+030 90 02             MM   COUNTER  ; Writes new value of counter
+032 10 04             JZ   START    ; Goes back to start if counter = 0
+034 00 22             JP   LOOP     ; Goes back to loop if counter != 0
+036 80 24   ADDUPPER  LD   WRITE_1  ; Loads upper MM byte
+038 40 03             ADD  ONE      ; Write_1++
+03A 90 24             MM   WRITE_1  ; Writes result
+03C 00 2C             JP   WRITE_3  ; Returns to loop  

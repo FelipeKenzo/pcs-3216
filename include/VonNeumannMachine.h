@@ -9,6 +9,7 @@
 #include <regex>      // for input parsing (valid inputs)
 #include <locale>     // for input parsing (uppercase)
 #include <algorithm>  // for input parsing (transform)
+#include <fstream>
 
 #include "../include/MyUtils.h"
 
@@ -20,20 +21,18 @@ private:
     uint8_t mem[MEM_SIZE] = {0};
     
     // Registers
-    enum {
-        ac = 0, // Accumulator
-        pc,     // Program Counter
-        sp,
-        reg_num
-    };
+    uint8_t ac = 0;
+    uint16_t pc = 0;
     
-    uint16_t reg[reg_num] = {0};
-    
+    // Input/Output
+    std::ifstream* input;
+    std::ofstream* output;
+
     // Halt flags
     bool halted = false;
 
     // Breakpoints
-    std::list<uint16_t>* breakpoints;
+    std::list<uint16_t> breakpoints;
     
     // Opcodes
     enum {
@@ -55,18 +54,22 @@ private:
         OS      // OPERATING SYSTEM CALL
     };
 
-    uint16_t input();
+    uint16_t readInput();
     void executeInstruction(uint16_t instr, bool debug);
 
 public:
-    VonNeumannMachine();
+    VonNeumannMachine(std::ifstream* input, std::ofstream* output);
     void run();
     void step();
     void halt();
-    void setRegister(uint16_t reg, uint16_t data);
-    uint16_t* getRegisters();
-    uint16_t memRead(uint16_t addr);
+    void setPC(uint16_t data);
+    void setAC(uint8_t data);
+    uint8_t getPC();
+    uint8_t getAC();
+    uint16_t memRead_w(uint16_t addr);
+    uint8_t  memRead_b(uint16_t addr);
     void memWrite_w(uint16_t addr, uint16_t data);
+    void memWrite_b(uint16_t addr, uint16_t data);
 };
 
 #endif

@@ -1,8 +1,7 @@
 #include "../include/VonNeumannMachine.h"
 
-VonNeumannMachine::VonNeumannMachine() {
-    breakpoints = new std::list<uint16_t>();
-    reg[sp] = 0xFFE;
+VonNeumannMachine::VonNeumannMachine(std::ifstream* input, std::ofstream* output) : 
+    input(input), output(output){
 }
 
 void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
@@ -13,81 +12,73 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
 
     if(debug) {
         std::cout << "---------------------------\n"
-                  << "0x" << std::right << std::setfill('0') 
-                  << std::setw(3) << std::hex << reg[pc]-2 << "  "
-                  << std::setw(2) << std::hex << (uint16_t)mem[reg[pc] - 2] << " "
-                  << std::setw(2) << std::hex << (uint16_t)mem[reg[pc] - 1] << "  ";
+                  << "$" << std::right << std::setfill('0') 
+                  << std::setw(3) << std::hex << pc-2 << "  "
+                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 2] << " "
+                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 1] << "  ";
     }
 
     switch(op) {
         case JP:
             if (debug) std::cout << "JP  ";
-            reg[pc] = pa;
+            pc = pa;
             break;
         case JZ:
             if (debug) std::cout << "JZ  ";
-            if (reg[ac] == 0) reg[pc] = pa;
+            if (ac == 0) pc = pa;
             break;
         case JN:
             if (debug) std::cout << "JN  ";
-            if (reg[ac < 0]) reg[pc] = pa;
+            if (ac < 0) pc = pa;
             break;
         case LV:
             if (debug) std::cout << "LV  ";
-            reg[ac]  = memRead(pa);
+            ac  = memRead_b(pa);
             break;
         case ADD:
-            if (debug) std::cout << "ADD ";
-            reg[ac] += memRead(pa);
+            if (debug) std::cout << "ADD " << (uint16_t)mem[pa] << " ";
+            ac += memRead_b(pa);
             break;
         case SUB:
             if (debug) std::cout << "SUB ";
-            reg[ac] -= memRead(pa);
+            ac -= memRead_b(pa);
             break;
         case MUL:
             if (debug) std::cout << "MUL ";
-            reg[ac] *= memRead(pa);
+            ac *= memRead_b(pa);
             break;
         case DIV:
             if (debug) std::cout << "DIV ";
-            reg[ac] /= memRead(pa);
+            ac /= memRead_b(pa);
             break;
         case LD:
             if (debug) std::cout << "LD  ";
-            reg[ac]  = memRead(pa);
+            ac  = memRead_b(pa);
             break;
         case MM:
             if (debug) std::cout << "MM  ";
-            memWrite_w(pa, reg[ac]);
+            memWrite_b(pa, ac);
             break;
         case SC:
             if (debug) std::cout << "SC  ";
-            memWrite_w(reg[sp], reg[pc]);
-            reg[sp] -= 2;
-            reg[pc] = pa;
+            memWrite_w(pa, pc);
+            pc = pa + 2;
             break;
         case RS:
             if (debug) std::cout << "RS  ";
-            reg[sp] += 2;
-            // std::cout << std::hex << reg[sp] << "\n";
-            // std::cout << std::hex << memRead(reg[sp]) << "\n";
-            reg[pc] = memRead(reg[sp]);
+            pc = pa;
             break;
         case HM:
             if (debug) std::cout << "HM  ";
             halt();
-            reg[pc] = pa;
+            pc = pa;
             break;
         case GD:
             if (debug) std::cout << "GD  ";
-            reg[ac] = input();
+            ac = readInput();
             break;
         case PD:
             if (debug) std::cout << "PD  ";
-            std::cout << std::internal << std::setfill('0');
-            std::cout << "Accumulator: 0x" << std::uppercase
-                        << std::setw(4) << std::hex << reg[ac]
-                        << std::endl;
             break;
         case OS:
             if (debug) std::cout << "OS  ";
@@ -99,14 +90,13 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     if (debug) {
         std::cout << std::right << std::setfill('0') << std::setw(3)
                   << std::hex << pa << "\n"
-                  << "pc: 0x" << std::right << std::setfill('0') << std::setw(3)
-                  << std::hex << reg[pc] << "\n"
-                  << "sp: 0x" << std::right << std::setfill('0') << std::setw(3)
-                  << std::hex << reg[sp] << "\n"
-                  << "ac: 0x" << std::right << std::setfill('0') << std::setw(3)
-                  << std::hex << reg[ac] << "\n"
-                  << "---------------------------";
+                  << "pc: $" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << pc << "\n"
+                  << "ac: $" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << (uint16_t)ac << "\n"
+                  << "---------------------------\n";
     }
+
 }
 
 void VonNeumannMachine::run() {
@@ -114,11 +104,12 @@ void VonNeumannMachine::run() {
 
     while (!halted) {
         // Fetch instruction
-        uint16_t instr = memRead(reg[pc]);
-        reg[pc] += 2;
+        uint16_t instr = memRead_w(pc);
+        pc += 2;
 
        executeInstruction(instr, false); 
     }
+
 }
 
 void VonNeumannMachine::step() {
@@ -128,8 +119,8 @@ void VonNeumannMachine::step() {
 
     do {
         // Fetch instruction
-        uint16_t instr = memRead(reg[pc]);
-        reg[pc] += 2;
+        uint16_t instr = memRead_w(pc);
+        pc += 2;
 
         executeInstruction(instr, true);
 
@@ -141,44 +132,57 @@ void VonNeumannMachine::halt() {
     halted = true;
 }
 
-void VonNeumannMachine::setRegister(uint16_t reg, uint16_t data) {
-    if (reg >= reg_num) {
-        std::cerr << "invalid register.\n";
-    }
-
-    this->reg[reg] = data;
+void VonNeumannMachine::setPC(uint16_t data) {
+    pc = data;
 }
 
-uint16_t VonNeumannMachine::memRead(uint16_t addr) {
-    return *((uint16_t *)&mem[addr]);
+void VonNeumannMachine::setAC(uint8_t data) {
+    ac = data;
+}
+
+uint8_t VonNeumannMachine::getPC() {
+    return pc;
+}
+
+uint8_t VonNeumannMachine::getAC() {
+    return ac;
+}
+
+uint16_t VonNeumannMachine::memRead_w(uint16_t addr) {
+    return ((uint16_t)mem[addr] << 8) | (uint16_t)mem[addr+1];
+}
+
+uint8_t VonNeumannMachine::memRead_b(uint16_t addr) {
+    return mem[addr];
 }
 
 void VonNeumannMachine::memWrite_w(uint16_t addr, uint16_t data) {
-    mem[addr]   = data;
-    mem[addr+1] = data>>8;
+    mem[addr+1]  = data;
+    mem[addr]    = data>>8;
 }
 
-uint16_t* VonNeumannMachine::getRegisters() {
-    return reg;
+void VonNeumannMachine::memWrite_b(uint16_t addr, uint16_t data) {
+    mem[addr] = data;
 }
 
-uint16_t VonNeumannMachine::input() {
-    bool validInput = false;
-    uint intNumber = 0;
+uint16_t VonNeumannMachine::readInput() {
 
-    while (!validInput) {
-        std::cout << "Input (hex starts with $): ";
-        std::string input;
-        std::cin >> input;
+    char firstNibble = (*input).get();
+    char secondNibble = (*input).get();
 
-        std::transform(input.begin(), input.end(), input.begin(), ::toupper);
-        
-        if (isNumber(input)) {
-            validInput = true;
-            if (input[0] == '$') intNumber = htoi(input);
-            else intNumber = std::stoi(input);
-        }
+    std::string byte = "";
+
+    byte.push_back(firstNibble);
+    byte.push_back(secondNibble);
+
+    uint intByte;
+    
+    if (isNumber(byte)) {
+        intByte = htoi(byte);
+        return intByte;
+    }
+    else {
+        return 0;
     }
 
-    return intNumber;
 }

@@ -18,7 +18,7 @@ bool Assembler::isValidLabel(const std::string& s) {
         char c = s[i];
         if ((c < '0') || (c > '9')) {         // Not digit
             if ((c < 'A') || (c > 'Z')) {     // Not letter
-                if ((c != '-') || (c != '_')) // Not '-' or '_'
+                if ((c != '-') && (c != '_')) // Not '-' or '_'
                     return false;
             }
         }
@@ -92,14 +92,13 @@ bool Assembler::firstStep(std:: ifstream& src) {
             if (warnings) std::cerr << "Warning(" << lc << "): too many operands.\n";
         }
 
-        // If more than two words, first is a label:
-        if (words.size() > 2) {
+        // If firs word is a label, it ends with "1":
+        if (words[0].back() == ':') {
             hasLabel = true;
             std::string newLabel = words[0];
-            //std::cout << newLabel << "\n";
 
             if (!isValidLabel(newLabel)) {
-                std::cerr << "Error(" << lc << "): invalid label .\n";
+                std::cerr << "Error(" << lc << "): invalid label.\n";
                 isError = true;
                 continue;
             }
@@ -186,19 +185,12 @@ bool Assembler::firstStep(std:: ifstream& src) {
             // Is the operand a number?
             if (isNumber(operand)) {
                 
-                uint64_t addr;
+                uint32_t addr;
                 if (operand[0] == '$') addr = htoi(operand);  // operand in HEX
                 else addr = std::stoi(operand);               // operand in DEC
 
-                // Checks if valid operand
-                if (mnemonic == "CON") {
-                        if (addr > 0xFFFF) {
-                        std::cerr << "Error(" << lc << "): invalid operand value.\n";
-                        isError = true;
-                    continue;
-                    }
-                }
-                else if (addr > 0xFFF) {
+                // Checks if valid operand                
+                if (addr > 0xFFF) {
                     std::cerr << "Error(" << lc << "): invalid operand value.\n";
                     isError = true;
                     continue;
@@ -277,10 +269,9 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
     lst << "Note: memory is Little-Endian.\n\n";
 
     // Hex output variables
-    uint16_t code = 0;
+    std::vector<uint8_t> data;
     uint16_t addr = 0;
     uint16_t size = 0;
-    uint64_t data = 0;
     uint16_t chks = 0;
 
     while (getline(src, line) && !isEnd) {
@@ -306,7 +297,7 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         if (words.size() == 0 ) continue;                                   // ignore blank lines
 
         // save and delete labels
-        if (words.size() > 2) {
+        if (words[0].back() == ':') {
             label = words[0];
             label.pop_back();
             words.erase(words.begin());
@@ -329,63 +320,38 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         if (mnemonic == "END") isEnd = true;
 
         // Calculate machine code
-        if (mTable[mnemonic].size == 2) {
-            code = mTable[mnemonic].opcode << 12;
+        if (mnemonic == "CON") {
+            if (isNumber(operand)) {
+                if (operand[0] == '$') data.push_back(htoi(operand));
+                else data.push_back(std::stoi(operand));
+            }
+        }
+
+        else if (mTable[mnemonic].size == 2) {
+            data.push_back(mTable[mnemonic].opcode << 4);
             
             if (isNumber(operand)) {
-                if (operand[0] == '$') code = code | htoi(operand);
-                else code = code | std::stoi(operand);
+                if (operand[0] == '$') {
+                    data[data.size()-1] |= (htoi(operand) >> 8);
+                    data.push_back(htoi(operand) & 0xFF);
+                }
+                else {
+                    data[data.size()-1] |= (std::stoi(operand) >> 8);
+                    data.push_back(std::stoi(operand) & 0xFF);
+                }
             }
+            // label as operand
             else {
-                code = code | sTable[operand].address;
+                data[data.size()-1] |= sTable[operand].address >> 8;
+                data.push_back(sTable[operand].address & 0xFF);
             }
-
-            // To Little Endian
-            //code = (code << 8) | (code >> 8);
-        }
-
-        // Output to vnc file:
-        // Only real instructions are generated
-        if (mTable[mnemonic].size == 2) {
-            // Write address if not written yet;
-            // std::cout << (addr == 0) << "\n";
-            if (addr == 0) {
-                addr = pc;
-                //std::cout << "addr = " << std::hex << addr << "\n";
-            }
-            // fill data
-            data = (data << 16) | code;
-            size += 4;
-            //std::cout << "data = " <<std::setfill('0') << std::setw(16) << std::hex << data << "\n";
-        }
-        
-        // End block and write to vnc file
-        //std::cout << size << "\n";
-        if ((size == 12 || mnemonic == "ORG" || isEnd) && addr) {
-            //std::cout << "ENTRI\n";
-            //std::cout << size << "\n";
-            vnc << std::right << std::setfill('0') <<  std::uppercase
-                << std::setw(3) << std::hex  << addr // write address
-                << std::setw(1) << size              // write size
-                << std::setw(size) << data;          // write data
-
-            chks = calculateCheksum(addr, size, data);
-            
-            // Write checksum
-            vnc << std::right << std::setfill('0') <<  std::uppercase
-                << std::setw(2) << std::hex  << chks << "\n";
-            
-            chks = 0;
-            addr = 0;
-            size = 0;
-            data = 0;
         }
         
         // Output to lst file:
         // If it doensn't occupy memory space:
         if (mTable[mnemonic].size == 0) {
             // Blank space for address and code
-            lst << "            "; 
+            lst << "            ";
             
             // Blankspace for label
             for (int i = 0; i < labelSize; i++) {
@@ -393,14 +359,24 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
             }
             lst << "  ";
         }
-        else {
+        else if (mTable[mnemonic].size == 1) {
+            // Output memory location
+            lst << std::right << std::setfill('0') << std::setw(3) << std::uppercase
+                << std::hex  << pc << " ";
+            // Output machine code
+            lst << std::setw(2) << (uint)data[data.size()-1] << "      "; // First Byte
+
+            // Output label;
+            lst << std::right << std::setfill(' ') << std::setw(labelSize) << label << "  "; 
+        }
+        else if (mTable[mnemonic].size == 2) {
             // Output memory location
             lst << std::right << std::setfill('0') << std::setw(3) << std::uppercase
                 << std::hex  << pc << " ";
 
             // Output machine code
-            lst << std::setw(2) << (code >> 8) << " ";       // First Byte
-            lst << std::setw(2) << (code & 0x00FF) << "   "; // Second Byte
+            lst << std::setw(2) << (uint)data[data.size()-2] << " ";    // First Byte
+            lst << std::setw(2) << (uint)data[data.size()-1] << "   ";  // Second Byte
             
             // Output label;
             lst << std::right << std::setfill(' ') << std::setw(labelSize) << label << "  "; 
@@ -415,8 +391,44 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         // Output comment
         lst << comment << "\n";
 
+        // Only real instructions are generated
+        if (mTable[mnemonic].size > 0) {
+            if (addr == 0) {
+                addr = pc;
+            }
+        }
+        
+        // End block and write to vnc file
+        if ((data.size() >= 15 || mnemonic == "ORG" || isEnd) && addr) {
+            //std::cout << "ENTRI\n";
+            //std::cout << size << "\n";
+            if (data.size() > 15) size = 15;
+            else size = data.size();
+            vnc << std::right << std::setfill('0') <<  std::uppercase
+                << std::setw(4) << std::hex  << addr  // write address
+                << std::setw(2) << size;              // write size
+
+            for (int i = 0; i <= size; i++) {
+                vnc << std::setw(2) << std::hex << (uint16_t)data[i];
+            }
+
+            // 
+            data.erase(data.begin(), data.begin() + size);
+
+            //chks = calculateCheksum(addr, size, data);
+            
+            // Write checksum
+            // vnc << std::right << std::setfill('0') <<  std::uppercase
+            //     << std::setw(2) << std::hex  << chks << "\n";
+            
+            chks = 0;
+            addr = 0;
+            size = 0;
+        }
+
         pc += mTable[mnemonic].size;
     }
+    vnc << "0000";
 
     return;
 }
@@ -428,7 +440,8 @@ bool Assembler::assemble() {
 
     // Check if file opened
     if (!src.is_open()) {
-        std::cerr << "Could not open \"" << srcFilename << "\". Aborting.\n";
+        std::string fileName = eraseSubStr(fileName, "./filesystem/");
+        std::cerr << "Could not open \"" << fileName << "\". Aborting.\n";
         return (false);
     }
 

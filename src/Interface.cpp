@@ -1,7 +1,47 @@
 #include "../include/Interface.h"
 
 Interface::Interface() {
-    vnm = new VonNeumannMachine();
+
+    inFile.open("./filesystem/test.vnc");
+    outFile.open("./filesystem/output.txt");
+
+    vnm = new VonNeumannMachine(&inFile, &outFile);
+
+    // Loads loader
+    vnm->memWrite_w(0x00, 0x0004);
+    vnm->memWrite_w(0x02, 0x0001);
+    vnm->memWrite_w(0x04, 0xD000);
+    vnm->memWrite_w(0x06, 0x4024);
+    vnm->memWrite_w(0x08, 0x9024);
+    vnm->memWrite_w(0x0A, 0x5090);
+    vnm->memWrite_w(0x0C, 0x1018);
+    vnm->memWrite_w(0x0E, 0xD000);
+    vnm->memWrite_w(0x10, 0x9025);
+    vnm->memWrite_w(0x12, 0xD000);
+    vnm->memWrite_w(0x14, 0x9002);
+    vnm->memWrite_w(0x16, 0x0022);
+    vnm->memWrite_w(0x18, 0xD000);
+    vnm->memWrite_w(0x1A, 0x1020);
+    vnm->memWrite_w(0x1C, 0x9025);
+    vnm->memWrite_w(0x1E, 0x0012);
+    vnm->memWrite_w(0x20, 0xC000);
+    vnm->memWrite_w(0x22, 0xD000);
+    vnm->memWrite_w(0x24, 0x9000);
+    vnm->memWrite_w(0x26, 0x8025);
+    vnm->memWrite_w(0x28, 0x4003);
+    vnm->memWrite_w(0x2A, 0x1036);
+    vnm->memWrite_w(0x2C, 0x8002);
+    vnm->memWrite_w(0x2E, 0x5003);
+    vnm->memWrite_w(0x30, 0x9002);
+    vnm->memWrite_w(0x32, 0x1004);
+    vnm->memWrite_w(0x34, 0x0022);
+    vnm->memWrite_w(0x36, 0x8024);
+    vnm->memWrite_w(0x38, 0x4003);
+    vnm->memWrite_w(0x3A, 0x9024);
+    vnm->memWrite_w(0x3C, 0x002c);
+
+
+
     std::cout << "__     __          _   _                                         __     ____  __ \n"
               << "\\ \\   / /__  _ __ | \\ | | ___ _   _ _ __ ___   __ _ _ __  _ __   \\ \\   / /  \\/  |\n"
               << " \\ \\ / / _ \\| '_ \\|  \\| |/ _ \\ | | | '_ ` _ \\ / _` | '_ \\| '_ \\   \\ \\ / /| |\\/| |\n"
@@ -99,7 +139,7 @@ void Interface::input() {
 
             case load:
                 if (argc == 2) {
-                    loadProgram("./filesystem/" + argv[1]);
+                    loadProgram(argv[1]);
                 }
                 else {
                     std::cerr << "load [program]*\n";
@@ -113,17 +153,22 @@ void Interface::input() {
                 else if (argc == 1){
                     runVnm("");
                 }
-                std::cerr << "run [startAddress]\n";
+                else {
+                    std::cerr << "run [startAddress]\n";
+                }
                 break;
 
             case step:
                 if (argc == 2) {
                     stepVnm(argv[1]);
                 }
-                else {
+                else if (argc == 1) {
                     stepVnm("");
                 }
-                std::cerr << "step [startAddress]*\n";
+                else {
+
+                    std::cerr << "step [startAddress]*\n";
+                }
                 break;
 
             case print:
@@ -182,6 +227,10 @@ void Interface::helpMessage() {
               << "usage: run [startAddress]\n"
               << "      [startAddress]   start address for the simulation. Must be lower than $FFE.\n"
               << "                       can be in etiher decimal or hexadecimal (starting with '$').\n\n"
+              << "set: sets the contents of a register.\n"
+              << "usage: set [register] [data]\n"
+              << "      [register]       the register to be written. Either 'ac, 'pc' or 'sp'.\n"
+              << "      [data]           the data to be written in the register. Mus be lower tha $FFFF.\n\n"
               << "status: shows the current status of the Von Neumann Machine.\n\n"
               << "step: steps throught the execution of the Von Neumann Machine. Typing 'halt' aborts.\n"
               << "      [startAddress]   start address for the simulation. Must be lower than $FFE.\n"
@@ -222,7 +271,7 @@ void Interface::removeFiles(std::vector<std::string> files) {
 
 void Interface::vnmTurnOn() {
     if (vnm == NULL) {
-        vnm = new VonNeumannMachine();
+        vnm = new VonNeumannMachine(&inFile, &outFile);
         std::cout << "Von Neumann Machine was turned ON.\n";
     }
     else {
@@ -249,13 +298,10 @@ void Interface::showVnmStatus() {
     }
     else {
         std::cout << "Von Neumann Machine is ON.\n";
-        uint16_t* reg = vnm->getRegisters();
         std::cout << std::hex << std::right <<std::setw(4) << std::uppercase
-                  << "ac: 0x" << reg[0] << "\n";
+                  << "ac: 0x" << vnm->getAC() << "\n";
         std::cout << std::hex << std::right <<std::setw(4) << std::uppercase
-                  << "pc: 0x" << reg[1] << "\n";
-        std::cout << std::hex << std::right <<std::setw(4) << std::uppercase
-                  << "sp: 0x" << reg[2] << "\n";
+                  << "pc: 0x" << vnm->getPC() << "\n";
     }
     return;
 }
@@ -265,8 +311,19 @@ void Interface::loadProgram(std::string vnc) {
         std::cout << "Von Neumann Machine is OFF.\n";
         return;
     }
-    Loader* l = new Loader();
-    l->load(vnm, vnc);
+
+    inFile.close();
+    inFile.open("./filesystem/" + vnc);
+
+    if (!inFile.is_open()) {
+        std::cerr << "load: file \"" << vnc << "\" could not be opened.";
+    }
+
+    vnm->setPC(0x000);
+    vnm->run();
+
+    inFile.close();
+    inFile.open("./filesystem/input.txt");
 }
 
 void Interface::runVnm(std::string addr) {
@@ -295,7 +352,7 @@ void Interface::runVnm(std::string addr) {
         return;
     }
 
-    vnm->setRegister(0,start);
+    vnm->setPC(start);
     vnm->run();
 }
 
@@ -307,7 +364,7 @@ void Interface::stepVnm(std::string addr) {
     }
 
     if (addr == "") {
-        vnm->run();
+        vnm->step();
         return;
     }
 
@@ -324,7 +381,7 @@ void Interface::stepVnm(std::string addr) {
         return;
     }
 
-    vnm->setRegister(0,start);
+    vnm->setPC(start);
     vnm->step();
 }
 
@@ -347,34 +404,38 @@ void Interface::printFile(std::string path) {
 }
 
 void Interface::setReg(std::string reg, std::string data) {
-    uint16_t regNumber;
     uint32_t dataValue;
-
-    if (reg == "ac") regNumber = 0;
-    else if (reg == "pc") regNumber = 1;
-    else if (reg == "sp") regNumber = 1;
-    else {
-        std::cerr << "setReg: invalid register.\n";
-        return;
-    }
     
     if (vnm == NULL) {
         std::cout << "Von Neumann Machine is OFF.\n";
         return;
     }
-    
+
     if (!isNumber(data)) {
         std::cerr << "setReg: invalid data value\n";
         return;
     }
+    
 
     if (data[0] == '$') dataValue = htoi(data);
     else dataValue = std::stoi(data);
 
-    if (dataValue > 0xFFFF) {
-        std::cerr << "setReg: invalid data value\n";
+    if (reg == "ac") {
+        if (dataValue > 0xFFFF) {
+            std::cerr << "set: invalid data value\n";
+            return;
+        }
+        vnm->setAC(dataValue);
+    }
+    else if (reg == "pc") {
+        if (dataValue > 0x0FFF) {
+            std::cerr << "set: invalid data value\n";
+            return;
+        }
+        vnm->setPC(dataValue);
+    }
+    else {
+        std::cerr << "setReg: invalid register.\n";
         return;
     }
-
-    vnm->setRegister(regNumber, dataValue);
 }

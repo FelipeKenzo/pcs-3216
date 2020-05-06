@@ -7,7 +7,7 @@
 #include "../include/Assembler.h"
 
 int main (int argc, char* argv[]) {
-
+    
     Interface i = Interface();
     i.input();
 

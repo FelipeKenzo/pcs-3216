@@ -1,10 +1,11 @@
             org     $100
             jp      init    ; goes to init
+
 ;Data Area
 const1:     con     $0      ; const1 = 0
 const2:     con     $1      ; const2 = 1
-const3:     con     $FFFF   ; const3 = $FFFF (-1)
-const4:     con     $ef0    ; const4 = $EF0
+const3:     con     $FF     ; const3 = $FF (-1)
+const4:     con     $ef     ; const4 = $EF
 const5:     con     $3      ; const5 = 3
 var1:       con     $0      ; var1 = 0
 
@@ -27,9 +28,9 @@ jn:         add     const4  ; ac += $EFO (expected to result in $EEF)
             ld      const1  ; ac = 0
             ld      var1    ; ac = var1 (should be $4FA)
             sc      subr    ; branch to subr (pc should be $300)     
-            PD      $0      ; Print Data
-            GD      $0      ; get data
-            PD      $0 
+            PD              ; Print Data
+            GD              ; get data
+            PD       
             HM      init    ; Halts Machine
             
             org     $300
