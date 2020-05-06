@@ -3,14 +3,16 @@
 ; Data Area
 counter:    con   $00       ; Counts number of bytes of data to be read
 one:        con   $01       ; 1 constant
+opcode:     con   $90       ; MM opcode value
+zero:       con   $00       ; 0 constant
 
-; Program start
+; Program startset 
 start:      gd              ; Reads first address byte from file
-            add   write_1   ; Adds upper address to write_1
+            add   opcode    ; Adds upper address to opcode
             mm    write_1   ; Writes result to write_1
-            sub   $90       ; Subtracts MM opcode
+            sub   opcode    ; Subtracts MM opcode
             jz    zero_1    ; If equals to zero, we jump to zero_1 and continue to read the address
-            gd              ; Reads second byte from file
+            gd              ; Reads second address byte from file
             mm    write_2   ; Writes to write_2
 readSize:   gd              ; Reads byte count from file
             mm    counter   ; Writes byte count to counter
@@ -30,6 +32,7 @@ write_1:    con   $90       ; MM first byte (will be read as instruction)
 write_2:    con   $00       ; MM second byte (will be read as instruction)
             ld    write_2   ; Loads MM second byte (lower address byte)
             add   one       ; write_2 += 1
+            mm    write_2   ; Writes new lower address byte
             jz    addUpper  ; jumps to addUpper (adds one to upper address byte)  
 write_3:    ld    counter   ; Loads value from counter
             sub   one       ; Counter--

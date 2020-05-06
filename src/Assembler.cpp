@@ -394,7 +394,13 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         // Only real instructions are generated
         if (mTable[mnemonic].size > 0) {
             if (addr == 0) {
-                addr = pc;
+                // std::cout << data.size() << "\n";
+                // for (int i = 0; i < data.size(); i++) {
+                //     std::cout << (uint)data[i] << " ";
+                // }
+                // std::cout << "\n";
+                if (data.size() == 3) addr = pc - 1;
+                else addr = pc;
             }
         }
         
@@ -408,7 +414,7 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
                 << std::setw(4) << std::hex  << addr  // write address
                 << std::setw(2) << size;              // write size
 
-            for (int i = 0; i <= size; i++) {
+            for (int i = 0; i < size; i++) {
                 vnc << std::setw(2) << std::hex << (uint16_t)data[i];
             }
 

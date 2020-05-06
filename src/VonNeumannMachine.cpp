@@ -29,11 +29,11 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
             break;
         case JN:
             if (debug) std::cout << "JN  ";
-            if (ac < 0) pc = pa;
+            if (ac >> 7) pc = pa;
             break;
         case LV:
             if (debug) std::cout << "LV  ";
-            ac  = memRead_b(pa);
+            ac = pa;
             break;
         case ADD:
             if (debug) std::cout << "ADD " << (uint16_t)mem[pa] << " ";
@@ -79,6 +79,7 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
             break;
         case PD:
             if (debug) std::cout << "PD  ";
+            writeOutput();
             break;
         case OS:
             if (debug) std::cout << "OS  ";
@@ -88,11 +89,11 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     }
 
     if (debug) {
-        std::cout << std::right << std::setfill('0') << std::setw(3)
+        std::cout << std::right << std::setfill('0') << std::setw(3) << std::uppercase
                   << std::hex << pa << "\n"
                   << "pc: $" << std::right << std::setfill('0') << std::setw(3)
                   << std::hex << pc << "\n"
-                  << "ac: $" << std::right << std::setfill('0') << std::setw(3)
+                  << "ac: $" << std::right << std::setfill('0') << std::setw(2)
                   << std::hex << (uint16_t)ac << "\n"
                   << "---------------------------\n";
     }
@@ -184,5 +185,11 @@ uint16_t VonNeumannMachine::readInput() {
     else {
         return 0;
     }
+}
 
+void VonNeumannMachine::writeOutput() {
+    std::cout << "output: " << std::setfill('0') << std::setw(2)
+              << std::right << std::hex << (uint)ac << "\n";
+    (*output) << std::setfill('0') << std::setw(2)
+              << std::right << std::hex << (uint)ac;
 }

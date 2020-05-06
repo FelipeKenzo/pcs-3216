@@ -41,12 +41,23 @@ std::vector<std::string> split(const std::string& str, char delim) {
 }
 
 bool isNumber(const std::string& s) {
+    // std::cout << s << ": ";
     // Should start with '$' if hex or a digit if decimal.
-    if (((s[0] < '0') || (s[0] > '9')) && (s[0] != '$')) return false;
+    if (((s[0] < '0') || (s[0] > '9')) && ((s[0] < 'A')||(s[0] > 'F')) && (s[0] != '$')) {
+        // std::cout << s[0] << "\n";
+        return false;
+    }
 
-    // All other characters 
+    // All other characters can range from (0-9,A-F)
     for (int i = 1; i < s.length()-1; i++) {
-        if (((s[0] < '0') || (s[0] > '9')) && (s[0] != '$')) return false;
+        if (((s[i] < '0') || (s[i] > '9')) && ((s[i] < 'A')||(s[i] > 'F'))) {
+            // std::cout << ((s[0] < '0') || (s[0] > '9')) << " ";
+            // std::cout << ((s[0] < 'A') || (s[0] > 'F')) << " ";
+            // std::cout << (((s[0] < '0') || (s[0] > '9')) && ((s[0] < 'A')||(s[0] > 'F'))) << " ";
+            // std::cout << "\"" << s[i] << "\"\n";
+            return false;
+        
+        }
     }
 
     return true;

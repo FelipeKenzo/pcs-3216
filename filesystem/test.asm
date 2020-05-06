@@ -34,7 +34,8 @@ jn:         add     const4  ; ac += $EFO (expected to result in $EEF)
             HM      init    ; Halts Machine
             
             org     $300
-subr:       add     const2
-            rs      $0
+subr:       jp      $000    ; Subroutine return address
+            add     const2
+            rs      subr    ; Return from subroutine
             
             END     init    ; Indica INIC como endereco de partida do programa;

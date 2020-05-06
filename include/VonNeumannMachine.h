@@ -55,6 +55,7 @@ private:
     };
 
     uint16_t readInput();
+    void writeOutput();
     void executeInstruction(uint16_t instr, bool debug);
 
 public:
