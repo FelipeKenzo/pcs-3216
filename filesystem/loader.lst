@@ -1,39 +1,57 @@
 Listing for source file "./filesystem/loader.asm".
 Note: memory is Little-Endian.
 
-000 00 06             JP   START    ; Jumps data area to first instruction
-002 00       COUNTER  CON  $00      ; Counts number of bytes of data to be read
-003 01           ONE  CON  $01      ; 1 constant
-004 90        OPCODE  CON  $90      ; MM opcode value
-005 00          ZERO  CON  $00      ; 0 constant
-006 D0 00      START  GD            ; Reads first address byte from file
-008 40 04             ADD  OPCODE   ; Adds upper address to opcode
-00A 90 26             MM   WRITE_1  ; Writes result to write_1
-00C 50 04             SUB  OPCODE   ; Subtracts MM opcode
-00E 10 1A             JZ   ZERO_1   ; If equals to zero, we jump to zero_1 and continue to read the address
-010 D0 00             GD            ; Reads second address byte from file
-012 90 27             MM   WRITE_2  ; Writes to write_2
-014 D0 00   READSIZE  GD            ; Reads byte count from file
-016 90 02             MM   COUNTER  ; Writes byte count to counter
-018 00 24             JP   LOOP     ; Jumps to memory write loop.
-01A D0 00     ZERO_1  GD            ; Reads second byte from file
-01C 10 22             JZ   ZERO_2   ; If also zero, we reached end of program, halt loader.
-01E 90 27             MM   WRITE_2  ; Writes to write_2
-020 00 14             JP   READSIZE ; goes back to reading 
-022 C0 00     ZERO_2  HM   $000     ; Halts machine, end of program.
-024 D0 00       LOOP  GD            ; Reads a byte of data
-026 90       WRITE_1  CON  $90      ; MM first byte (will be read as instruction)
-027 00       WRITE_2  CON  $00      ; MM second byte (will be read as instruction)
-028 80 27             LD   WRITE_2  ; Loads MM second byte (lower address byte)
-02A 40 03             ADD  ONE      ; write_2 += 1
-02C 90 27             MM   WRITE_2  ; Writes new lower address byte
-02E 10 3A             JZ   ADDUPPER ; jumps to addUpper (adds one to upper address byte)  
-030 80 02    WRITE_3  LD   COUNTER  ; Loads value from counter
-032 50 03             SUB  ONE      ; Counter--
-034 90 02             MM   COUNTER  ; Writes new value of counter
-036 10 06             JZ   START    ; Goes back to start if counter = 0
-038 00 24             JP   LOOP     ; Goes back to loop if counter != 0
-03A 80 26   ADDUPPER  LD   WRITE_1  ; Loads upper MM byte
-03C 40 03             ADD  ONE      ; Write_1++
-03E 90 26             MM   WRITE_1  ; Writes result
-040 00 30             JP   WRITE_3  ; Returns to loop  
+000 00 08              JP   READADDR  ; Jumps data area to first instruction
+002 00        COUNTER  CON  $00       ; Counts number of bytes of data to be read
+003 01            ONE  CON  $01       ; 1 constant
+004 90         OPCODE  CON  $90       ; MM opcode value
+005 00           FAIL  CON  $00       ; If a chacksum failed
+006 00       CHECKSUM  CON  $00       ; Calculated Checksum
+007 FF        COMPAUX  CON  $FF       ; Auxiliar to calculate 1's complement
+008 80 06    READADDR  LD   CHECKSUM  ; Loads checksum.
+00A 50 06              SUB  CHECKSUM  ; Zero.
+00C 90 06              MM   CHECKSUM  ; Reset checksum.      
+00E A0 54              SC   READBYTE  ; Reads first address byte from file
+010 40 04              ADD  OPCODE    ; Adds upper address to opcode
+012 90 28              MM   WRITE_1   ; Writes result to write_1
+014 A0 54              SC   READBYTE  ; Reads second address byte from file
+016 90 29              MM   WRITE_2   ; Writes to write_2
+018 10 1C              JZ   ZERO1     ; If the last byte was zero, we check the upper byte.
+01A 00 22              JP   READSIZE  ; Else, we continue to read the size byte.
+01C 80 28       ZERO1  LD   WRITE_1   ; Loads upper byte (OP + upper address).
+01E 50 04              SUB  OPCODE    ; Removes opcode.
+020 10 52              JZ   EOP       ; If it is also zero, we terminate the program.
+022 A0 54    READSIZE  SC   READBYTE  ; Reads byte count from file
+024 90 02              MM   COUNTER   ; Writes byte count to counter
+026 A0 54        LOOP  SC   READBYTE  ; Reads a byte of data
+028 90        WRITE_1  CON  $90       ; MM first byte (will be read as instruction)
+029 00        WRITE_2  CON  $00       ; MM second byte (will be read as instruction)
+02A 80 29              LD   WRITE_2   ; Loads MM second byte (lower address byte)
+02C 40 03              ADD  ONE       ; write_2 += 1
+02E 90 29              MM   WRITE_2   ; Writes new lower address byte
+030 10 3C              JZ   ADDUPPER  ; if equals zero (overflow) we add one to upper byte.  
+032 80 02     WRITE_3  LD   COUNTER   ; Loads value from counter
+034 50 03              SUB  ONE       ; Counter--
+036 90 02              MM   COUNTER   ; Writes new value of counter
+038 10 44              JZ   CHECKCHKS ; Compares checksums if counter = 0
+03A 00 26              JP   LOOP      ; Goes back to loop if counter != 0
+03C 80 28    ADDUPPER  LD   WRITE_1   ; Loads upper MM byte.
+03E 40 03              ADD  ONE       ; Write_1++
+040 90 28              MM   WRITE_1   ; Writes result.
+042 00 32              JP   WRITE_3   ; Continues back to loop
+044 80 07   CHECKCHKS  LD   COMPAUX   ; Loads $FF
+046 50 06              SUB  CHECKSUM  ; One's complement to calculate checksum
+048 90 06              MM   CHECKSUM  ; Saves computed checksum to memory
+04A D0 00              GD             ; Reads checksum from file
+04C 50 06              SUB  CHECKSUM  ; Compares both checksums
+04E 10 08              JZ   READADDR  ; If they are different, we continue and read next address.
+050 90 05              MM   FAIL      ; If they are differetn, we raise error flag and terminate program.
+052 C0 08         EOP  HM   READADDR  ; Halts machine.
+054 00 00    READBYTE  JP   $000      ; Return address.
+056 D0 00              GD             ; Reads a byte of data.     
+058 90 62              MM   DATA      ; Saves read byte.
+05A 40 06              ADD  CHECKSUM  ; Adds to checksum.
+05C 90 06              MM   CHECKSUM  ; Saves results to checksum variable.
+05E 80 62              LD   DATA      ; Recovers data that was read.
+060 B0 54              RS   READBYTE  ; Returns from soubroutine.
+062 00           DATA  CON  $00       ; Data that was read.

@@ -418,14 +418,14 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
                 vnc << std::setw(2) << std::hex << (uint16_t)data[i];
             }
 
-            // 
-            data.erase(data.begin(), data.begin() + size);
-
-            //chks = calculateCheksum(addr, size, data);
             
-            // Write checksum
-            // vnc << std::right << std::setfill('0') <<  std::uppercase
-            //     << std::setw(2) << std::hex  << chks << "\n";
+            chks = calculateChecksum(addr, size, data);
+
+            vnc << std::right << std::setfill('0') <<  std::uppercase
+                << std::setw(2) << std::hex  << chks;
+
+
+            data.erase(data.begin(), data.begin() + size);
             
             chks = 0;
             addr = 0;

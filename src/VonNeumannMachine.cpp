@@ -141,12 +141,12 @@ void VonNeumannMachine::setAC(uint8_t data) {
     ac = data;
 }
 
-uint8_t VonNeumannMachine::getPC() {
+uint16_t VonNeumannMachine::getPC() {
     return pc;
 }
 
-uint8_t VonNeumannMachine::getAC() {
-    return ac;
+uint16_t VonNeumannMachine::getAC() {
+    return (uint16_t)ac;
 }
 
 uint16_t VonNeumannMachine::memRead_w(uint16_t addr) {

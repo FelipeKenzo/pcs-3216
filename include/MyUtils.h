@@ -21,6 +21,6 @@ bool isNumber(const std::string& s);
 std::string eraseSubStr(const std::string& mainStr, const std::string &toErase);
 
 // Calculates cheksum
-uint16_t calculateCheksum(uint16_t addr, uint16_t size, uint64_t data);
+uint16_t calculateChecksum(uint16_t addr, uint16_t size, std::vector<uint8_t> data);
 
 #endif

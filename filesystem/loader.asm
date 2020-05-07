@@ -1,47 +1,81 @@
 ; LOADER (starts at $000)
-            jp    start     ; Jumps data area to first instruction
-; Data Area
-counter:    con   $00       ; Counts number of bytes of data to be read
-one:        con   $01       ; 1 constant
-opcode:     con   $90       ; MM opcode value
-zero:       con   $00       ; 0 constant
+            
+            jp      readAddr    ; Jumps data area to first instruction
 
-; Program startset 
-start:      gd              ; Reads first address byte from file
-            add   opcode    ; Adds upper address to opcode
-            mm    write_1   ; Writes result to write_1
-            sub   opcode    ; Subtracts MM opcode
-            jz    zero_1    ; If equals to zero, we jump to zero_1 and continue to read the address
-            gd              ; Reads second address byte from file
-            mm    write_2   ; Writes to write_2
-readSize:   gd              ; Reads byte count from file
-            mm    counter   ; Writes byte count to counter
-            jp    loop      ; Jumps to memory write loop.
+; //---------Data Area----------//
 
-; If first address byte is zero
-zero_1:     gd              ; Reads second byte from file
-            jz    zero_2    ; If also zero, we reached end of program, halt loader.
-            mm    write_2   ; Writes to write_2
-            jp    readSize  ; goes back to reading 
+counter:    con     $00         ; Counts number of bytes of data to be read
+one:        con     $01         ; 1 constant
+opcode:     con     $90         ; MM opcode value
+fail:       con     $00         ; If a chacksum failed
+checksum:   con     $00         ; Calculated Checksum
+compAux:    con     $FF         ; Auxiliar to calculate 1's complement
 
-zero_2:     hm    $000      ; Halts machine, end of program.
+; //--------Main Program--------//
 
-; Memory write loop
-loop:       gd              ; Reads a byte of data
-write_1:    con   $90       ; MM first byte (will be read as instruction)
-write_2:    con   $00       ; MM second byte (will be read as instruction)
-            ld    write_2   ; Loads MM second byte (lower address byte)
-            add   one       ; write_2 += 1
-            mm    write_2   ; Writes new lower address byte
-            jz    addUpper  ; jumps to addUpper (adds one to upper address byte)  
-write_3:    ld    counter   ; Loads value from counter
-            sub   one       ; Counter--
-            mm    counter   ; Writes new value of counter
-            jz    start     ; Goes back to start if counter = 0
-            jp    loop      ; Goes back to loop if counter != 0
+; Reads base address:
+readAddr:   ld      checksum    ; Loads checksum.
+            sub     checksum    ; Zero.
+            mm      checksum    ; Reset checksum.      
+            sc      readByte    ; Reads first address byte from file
+            add     opcode      ; Adds upper address to opcode
+            mm      write_1     ; Writes result to write_1
+            sc      readByte    ; Reads second address byte from file
+            mm      write_2     ; Writes to write_2
 
-; Add one to upper MM byte
-addUpper:   ld    write_1   ; Loads upper MM byte
-            add   one       ; Write_1++
-            mm    write_1   ; Writes result
-            jp    write_3   ; Returns to loop  
+; If the read address was zero, we end the program:
+            jz      zero1       ; If the last byte was zero, we check the upper byte.
+            jp      readSize    ; Else, we continue to read the size byte.
+zero1:      ld      write_1     ; Loads upper byte (OP + upper address).
+            sub     opcode      ; Removes opcode.
+            jz      eop         ; If it is also zero, we terminate the program.
+
+readSize:   sc      readByte    ; Reads byte count from file
+            mm      counter     ; Writes byte count to counter
+
+; Memory writing loop
+loop:       sc      readByte    ; Reads a byte of data
+write_1:    con     $90         ; MM first byte (will be read as instruction)
+write_2:    con     $00         ; MM second byte (will be read as instruction)
+            ld      write_2     ; Loads MM second byte (lower address byte)
+            add     one         ; write_2 += 1
+            mm      write_2     ; Writes new lower address byte
+            jz      addUpper    ; if equals zero (overflow) we add one to upper byte.  
+write_3:    ld      counter     ; Loads value from counter
+            sub     one         ; Counter--
+            mm      counter     ; Writes new value of counter
+            jz      checkChks   ; Compares checksums if counter = 0
+            jp      loop        ; Goes back to loop if counter != 0
+
+; Adds one to upper MM byte
+addUpper:   ld      write_1     ; Loads upper MM byte.
+            add     one         ; Write_1++
+            mm      write_1     ; Writes result.
+            jp      write_3     ; Continues back to loop
+
+; Compares the checksums
+checkChks:  ld      compAux     ; Loads $FF
+            sub     checksum    ; One's complement to calculate checksum
+            mm      checksum    ; Saves computed checksum to memory
+            gd                  ; Reads checksum from file
+            sub     checksum    ; Compares both checksums
+            jz      readAddr    ; If they are different, we continue and read next address.
+            mm      fail        ; If they are differetn, we raise error flag and terminate program.
+
+; Terminates program
+eop:        hm      readAddr    ; Halts machine.
+
+; //--------Subroutines---------//
+
+; Gets a byte and adds to checksum.
+readByte:   jp      $000        ; Return address.
+            gd                  ; Reads a byte of data.     
+            mm      data        ; Saves read byte.
+            add     checksum    ; Adds to checksum.
+            mm      checksum    ; Saves results to checksum variable.
+            ld      data        ; Recovers data that was read.
+            rs      readByte    ; Returns from soubroutine.
+; ReadByte data
+data:       con     $00         ; Data that was read.
+
+

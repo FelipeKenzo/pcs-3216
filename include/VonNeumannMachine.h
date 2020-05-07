@@ -65,8 +65,8 @@ public:
     void halt();
     void setPC(uint16_t data);
     void setAC(uint8_t data);
-    uint8_t getPC();
-    uint8_t getAC();
+    uint16_t getPC();
+    uint16_t getAC();
     uint16_t memRead_w(uint16_t addr);
     uint8_t  memRead_b(uint16_t addr);
     void memWrite_w(uint16_t addr, uint16_t data);

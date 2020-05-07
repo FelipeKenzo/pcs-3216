@@ -2,7 +2,8 @@
 
 Interface::Interface() {
 
-    inFile.open("./filesystem/input.vnc");
+    inFile.open("./filesystem/test.vnc");
+    std::cout << inFile.is_open() << "\n";
     outFile.open("./filesystem/output.txt");
 
     vnm = new VonNeumannMachine(&inFile, &outFile);
@@ -293,6 +294,10 @@ void Interface::loadProgram(std::string vnc) {
     vnm->setPC(0x000);
     vnm->run();
 
+    if (vnm->memRead_b(0x05)) {
+        std::cerr << "load: corrupted file!\n";
+    }
+
     inFile.close();
     inFile.open("./filesystem/input.txt");
 }
@@ -412,37 +417,53 @@ void Interface::setReg(std::string reg, std::string data) {
 }
 
 void Interface::loadLoader() {
-    vnm->memWrite_w(0x00, 0x0006);
+    vnm->memWrite_w(0x00, 0x0008);
     vnm->memWrite_w(0x02, 0x0001);
     vnm->memWrite_w(0x04, 0x9000);
-    vnm->memWrite_w(0x06, 0xD000);
-    vnm->memWrite_w(0x08, 0x4004);
-    vnm->memWrite_w(0x0A, 0x9026);
-    vnm->memWrite_w(0x0C, 0x5004);
-    vnm->memWrite_w(0x0E, 0x101A);
-    vnm->memWrite_w(0x10, 0xD000);
-    vnm->memWrite_w(0x12, 0x9027);
-    vnm->memWrite_w(0x14, 0xD000);
-    vnm->memWrite_w(0x16, 0x9002);
-    vnm->memWrite_w(0x18, 0x0024);
-    vnm->memWrite_w(0x1A, 0xD000);
-    vnm->memWrite_w(0x1C, 0x1022);
-    vnm->memWrite_w(0x1E, 0x9027);
-    vnm->memWrite_w(0x20, 0x0014);
-    vnm->memWrite_w(0x22, 0xC000);
-    vnm->memWrite_w(0x24, 0xD000);
-    vnm->memWrite_w(0x26, 0x9000);
-    vnm->memWrite_w(0x28, 0x8027);
-    vnm->memWrite_w(0x2A, 0x4003);
-    vnm->memWrite_w(0x2C, 0x9027);
-    vnm->memWrite_w(0x2E, 0x103A);
-    vnm->memWrite_w(0x30, 0x8002);
-    vnm->memWrite_w(0x32, 0x5003);
-    vnm->memWrite_w(0x34, 0x9002);
-    vnm->memWrite_w(0x36, 0x1006);
-    vnm->memWrite_w(0x38, 0x0024);
-    vnm->memWrite_w(0x3A, 0x8026);
-    vnm->memWrite_w(0x3C, 0x4003);
-    vnm->memWrite_w(0x3E, 0x9026);
-    vnm->memWrite_w(0x40, 0x0030);
+    vnm->memWrite_w(0x06, 0x00FF);
+    vnm->memWrite_w(0x08, 0x8006);
+    vnm->memWrite_w(0x0A, 0x5006);
+    vnm->memWrite_w(0x0C, 0x9006);
+    vnm->memWrite_w(0x0E, 0xA054);
+    vnm->memWrite_w(0x10, 0x4004);
+    vnm->memWrite_w(0x12, 0x9028);
+    vnm->memWrite_w(0x14, 0xA054);
+    vnm->memWrite_w(0x16, 0x9029);
+    vnm->memWrite_w(0x18, 0x101C);
+    vnm->memWrite_w(0x1A, 0x0022);
+    vnm->memWrite_w(0x1C, 0x8028);
+    vnm->memWrite_w(0x1E, 0x5004);
+    vnm->memWrite_w(0x20, 0x1052);
+    vnm->memWrite_w(0x22, 0xA054);
+    vnm->memWrite_w(0x24, 0x9002);
+    vnm->memWrite_w(0x26, 0xA054);
+    vnm->memWrite_w(0x28, 0x9000);
+    vnm->memWrite_w(0x2A, 0x8029);
+    vnm->memWrite_w(0x2C, 0x4003);
+    vnm->memWrite_w(0x2E, 0x9029);
+    vnm->memWrite_w(0x30, 0x103C);
+    vnm->memWrite_w(0x32, 0x8002);
+    vnm->memWrite_w(0x34, 0x5003);
+    vnm->memWrite_w(0x36, 0x9002);
+    vnm->memWrite_w(0x38, 0x1044);
+    vnm->memWrite_w(0x3A, 0x0026);
+    vnm->memWrite_w(0x3C, 0x8028);
+    vnm->memWrite_w(0x3E, 0x4003);
+    vnm->memWrite_w(0x40, 0x9028);
+    vnm->memWrite_w(0x42, 0x0032);
+    vnm->memWrite_w(0x44, 0x8007);
+    vnm->memWrite_w(0x46, 0x5006);
+    vnm->memWrite_w(0x48, 0x9006);
+    vnm->memWrite_w(0x4A, 0xD000);
+    vnm->memWrite_w(0x4C, 0x5006);
+    vnm->memWrite_w(0x4E, 0x1008);
+    vnm->memWrite_w(0x50, 0x9005);
+    vnm->memWrite_w(0x52, 0xC008);
+    vnm->memWrite_w(0x54, 0x0000);
+    vnm->memWrite_w(0x56, 0xD000);
+    vnm->memWrite_w(0x58, 0x9062);
+    vnm->memWrite_w(0x5A, 0x4006);
+    vnm->memWrite_w(0x5C, 0x9006);
+    vnm->memWrite_w(0x5E, 0x8062);
+    vnm->memWrite_w(0x60, 0xB054);
 }

@@ -79,28 +79,30 @@ std::string eraseSubStr(const std::string & mainStr, const std::string & toErase
     return newStr;
 }
 
-uint16_t calculateCheksum(uint16_t addr, uint16_t size, uint64_t data) {
-    uint16_t chks;
-    // Sum all nibbles
-    while (addr) {
-        chks += addr & 0xF;
-        addr = addr >> 4;
-    }
-    while(size) {
-        chks += size & 0xF;
-        size = size >> 4;
-    }
-    while (data) {
-        chks += data & 0xF;
-        data = data >> 4;
+uint16_t calculateChecksum(uint16_t addr, uint16_t size, std::vector<uint8_t> data) {
+    uint16_t chks = 0;
+    
+    chks += (addr >> 8);
+    // std::cout << std::hex << chks << "\n";
+    chks += (addr & 0xFF);
+    // std::cout << std::hex << chks << "\n";
+
+    chks += (size & 0xFF);
+    // std::cout << std::hex << chks << "\n";
+
+    for (int i = 0; i < size; i++) {
+        chks += (uint16_t)data[i];
+        // std::cout << std::hex << chks << "\n";
     }
     
-    //std::cout << std::hex << chks << "\n";
 
     // One's complement
     chks = 0xFFFF - chks;
+    
     // Isolate last byte
     chks = chks & 0x00FF;
 
+    // std::cout << std::hex << chks << "\n";
+    
     return chks;
 }
