@@ -30,6 +30,7 @@ private:
     void loadProgram(std::string vnc);
     void printFile(std::string file);
     void setReg(std::string reg, std::string random_data);
+    void displayMemory(std::string addr, std::string range);
 
     std::ifstream inFile;
     std::ofstream outFile;
@@ -37,7 +38,7 @@ private:
     enum command {
         invalid, exit, assemble, help, ls,
         rm, status, turn, load, run, print,
-        step, set
+        step, set, md, mm
     };
 
     std::map<std::string, command> commandMap = {
@@ -52,7 +53,9 @@ private:
         {"run", run},
         {"print", print},
         {"step", step},
-        {"set", set}
+        {"set", set},
+        {"md", md},
+        {"mm", mm}
     }; 
 
 public:

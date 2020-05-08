@@ -1,5 +1,7 @@
 ; LOADER (starts at $000)
-            
+            ld      fail        
+            sub     fail
+            mm      fail        ; Resets fail flag
             jp      readAddr    ; Jumps data area to first instruction
 
 ; //---------Data Area----------//

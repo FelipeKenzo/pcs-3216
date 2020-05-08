@@ -3,7 +3,6 @@
 Interface::Interface() {
 
     inFile.open("./filesystem/test.vnc");
-    std::cout << inFile.is_open() << "\n";
     outFile.open("./filesystem/output.txt");
 
     vnm = new VonNeumannMachine(&inFile, &outFile);
@@ -155,7 +154,22 @@ void Interface::input() {
                     std::cerr << "set [reg] [data]\n";
                 }
                 break;
-            
+            case md: {
+                std::string range = "0";
+                if (argc == 1) {
+                    std::cerr << "md: missing memory address.\n";
+                    break;
+                }
+                else if (argc == 3) {
+                    range = argv[2];
+                }
+                else if (argc > 3) {
+                    std::cerr << "md: too many parameters.\n";
+                    break;
+                }
+                displayMemory(argv[1], range);
+                break;
+            }
             default:
                 std::cerr << "\"" << argv[0] << "\" is not a valid command.\n";
                 break;
@@ -242,24 +256,24 @@ void Interface::vnmTurnOn() {
         outFile.open("./filesystem/output.txt");
         vnm = new VonNeumannMachine(&inFile, &outFile);
         loadLoader();
-        std::cout << "Von Neumann Machine was turned ON.\n";
+        std::cout << "Von Neumann Machine was turned on.\n";
     }
     else {
-        std::cout << "Von Neumann Machine is already ON.\n";
+        std::cout << "Von Neumann Machine is already on.\n";
     }
     return;
 }
 
 void Interface::vnmTurnOff() {
     if (vnm == NULL) {
-        std::cout << "Von Neumann Machine is already OFF.\n";
+        std::cout << "Von Neumann Machine is already off.\n";
     }
     else {
         inFile.close();
         outFile.close();
         delete vnm;
         vnm = NULL;
-        std::cout << "Von Neumann Machine was turned ON.\n";
+        std::cout << "Von Neumann Machine was turned off.\n";
     }
     return;
 }
@@ -269,11 +283,11 @@ void Interface::showVnmStatus() {
         std::cout << "Von Neumann Machine is OFF.\n";
     }
     else {
-        std::cout << "Von Neumann Machine is ON.\n";
-        std::cout << std::hex << std::right <<std::setw(4) << std::uppercase
-                  << "ac: 0x" << vnm->getAC() << "\n";
-        std::cout << std::hex << std::right <<std::setw(4) << std::uppercase
-                  << "pc: 0x" << vnm->getPC() << "\n";
+        std::cout << "\n";
+        std::cout << "ac: $" << std::setfill('0') << std::setw(2) << std::uppercase
+                  << std::hex << vnm->getAC() << "    ";
+        std::cout << "pc: $" << std::setfill('0') << std::setw(3) << std::uppercase
+                  << std::hex << vnm->getPC() << "\n\n";
     }
     return;
 }
@@ -294,7 +308,7 @@ void Interface::loadProgram(std::string vnc) {
     vnm->setPC(0x000);
     vnm->run();
 
-    if (vnm->memRead_b(0x05)) {
+    if (vnm->memRead_b(0x0B)) {
         std::cerr << "load: corrupted file!\n";
     }
 
@@ -417,53 +431,99 @@ void Interface::setReg(std::string reg, std::string data) {
 }
 
 void Interface::loadLoader() {
-    vnm->memWrite_w(0x00, 0x0008);
-    vnm->memWrite_w(0x02, 0x0001);
-    vnm->memWrite_w(0x04, 0x9000);
-    vnm->memWrite_w(0x06, 0x00FF);
-    vnm->memWrite_w(0x08, 0x8006);
-    vnm->memWrite_w(0x0A, 0x5006);
-    vnm->memWrite_w(0x0C, 0x9006);
-    vnm->memWrite_w(0x0E, 0xA054);
-    vnm->memWrite_w(0x10, 0x4004);
-    vnm->memWrite_w(0x12, 0x9028);
-    vnm->memWrite_w(0x14, 0xA054);
-    vnm->memWrite_w(0x16, 0x9029);
-    vnm->memWrite_w(0x18, 0x101C);
-    vnm->memWrite_w(0x1A, 0x0022);
-    vnm->memWrite_w(0x1C, 0x8028);
-    vnm->memWrite_w(0x1E, 0x5004);
-    vnm->memWrite_w(0x20, 0x1052);
-    vnm->memWrite_w(0x22, 0xA054);
-    vnm->memWrite_w(0x24, 0x9002);
-    vnm->memWrite_w(0x26, 0xA054);
-    vnm->memWrite_w(0x28, 0x9000);
-    vnm->memWrite_w(0x2A, 0x8029);
-    vnm->memWrite_w(0x2C, 0x4003);
-    vnm->memWrite_w(0x2E, 0x9029);
-    vnm->memWrite_w(0x30, 0x103C);
-    vnm->memWrite_w(0x32, 0x8002);
-    vnm->memWrite_w(0x34, 0x5003);
-    vnm->memWrite_w(0x36, 0x9002);
-    vnm->memWrite_w(0x38, 0x1044);
-    vnm->memWrite_w(0x3A, 0x0026);
-    vnm->memWrite_w(0x3C, 0x8028);
-    vnm->memWrite_w(0x3E, 0x4003);
-    vnm->memWrite_w(0x40, 0x9028);
-    vnm->memWrite_w(0x42, 0x0032);
-    vnm->memWrite_w(0x44, 0x8007);
-    vnm->memWrite_w(0x46, 0x5006);
-    vnm->memWrite_w(0x48, 0x9006);
-    vnm->memWrite_w(0x4A, 0xD000);
-    vnm->memWrite_w(0x4C, 0x5006);
-    vnm->memWrite_w(0x4E, 0x1008);
-    vnm->memWrite_w(0x50, 0x9005);
-    vnm->memWrite_w(0x52, 0xC008);
-    vnm->memWrite_w(0x54, 0x0000);
-    vnm->memWrite_w(0x56, 0xD000);
-    vnm->memWrite_w(0x58, 0x9062);
-    vnm->memWrite_w(0x5A, 0x4006);
-    vnm->memWrite_w(0x5C, 0x9006);
-    vnm->memWrite_w(0x5E, 0x8062);
-    vnm->memWrite_w(0x60, 0xB054);
+    vnm->memWrite_w(0x00, 0x800B);
+    vnm->memWrite_w(0x02, 0x500B);
+    vnm->memWrite_w(0x04, 0x900B);
+    vnm->memWrite_w(0x06, 0x000E);
+    vnm->memWrite_w(0x08, 0x0001);
+    vnm->memWrite_w(0x0A, 0x9000);
+    vnm->memWrite_w(0x0C, 0x00FF);
+    vnm->memWrite_w(0x0E, 0x800C);
+    vnm->memWrite_w(0x10, 0x500C);
+    vnm->memWrite_w(0x12, 0x900C);
+    vnm->memWrite_w(0x14, 0xA05A);
+    vnm->memWrite_w(0x16, 0x400A);
+    vnm->memWrite_w(0x18, 0x902E);
+    vnm->memWrite_w(0x1A, 0xA05A);
+    vnm->memWrite_w(0x1C, 0x902F);
+    vnm->memWrite_w(0x1E, 0x1022);
+    vnm->memWrite_w(0x20, 0x0028);
+    vnm->memWrite_w(0x22, 0x802E);
+    vnm->memWrite_w(0x24, 0x500A);
+    vnm->memWrite_w(0x26, 0x1058);
+    vnm->memWrite_w(0x28, 0xA05A);
+    vnm->memWrite_w(0x2A, 0x9008);
+    vnm->memWrite_w(0x2C, 0xA05A);
+    vnm->memWrite_w(0x2E, 0x9000);
+    vnm->memWrite_w(0x30, 0x802F);
+    vnm->memWrite_w(0x32, 0x4009);
+    vnm->memWrite_w(0x34, 0x902F);
+    vnm->memWrite_w(0x36, 0x1042);
+    vnm->memWrite_w(0x38, 0x8008);
+    vnm->memWrite_w(0x3A, 0x5009);
+    vnm->memWrite_w(0x3C, 0x9008);
+    vnm->memWrite_w(0x3E, 0x104A);
+    vnm->memWrite_w(0x40, 0x002C);
+    vnm->memWrite_w(0x42, 0x802E);
+    vnm->memWrite_w(0x44, 0x4009);
+    vnm->memWrite_w(0x46, 0x902E);
+    vnm->memWrite_w(0x48, 0x0038);
+    vnm->memWrite_w(0x4A, 0x800D);
+    vnm->memWrite_w(0x4C, 0x500C);
+    vnm->memWrite_w(0x4E, 0x900C);
+    vnm->memWrite_w(0x50, 0xD000);
+    vnm->memWrite_w(0x52, 0x500C);
+    vnm->memWrite_w(0x54, 0x100E);
+    vnm->memWrite_w(0x56, 0x900B);
+    vnm->memWrite_w(0x58, 0xC00E);
+    vnm->memWrite_w(0x5A, 0x0000);
+    vnm->memWrite_w(0x5C, 0xD000);
+    vnm->memWrite_w(0x5E, 0x9068);
+    vnm->memWrite_w(0x60, 0x400C);
+    vnm->memWrite_w(0x62, 0x900C);
+    vnm->memWrite_w(0x64, 0x8068);
+    vnm->memWrite_w(0x66, 0xB05A);
+    
+}
+
+void Interface::displayMemory(std::string addr, std::string range) {
+    if (!isNumber(addr)) {
+        std::cerr << "md: invalid memory address.\n";
+        return;
+    }
+
+    uint16_t numAddr;
+    if (addr[0] == '$') numAddr = htoi(addr);
+    else numAddr = std::stoi(addr);
+
+    if (numAddr > 0xFFF) {
+        std::cerr << "md: invalid memory address.\n";
+        return;
+    }
+
+    uint16_t baseAddr = numAddr & 0xFF0;
+
+    uint16_t numRange = std::stoi(range);
+
+    if (!isNumber(range)) {
+        std::cerr << "md: invalid range value.\n";
+        return;
+    }
+
+    uint16_t endAddr = numAddr + numRange;
+
+    uint16_t nlines = (((endAddr & 0xFF0) - baseAddr) >> 4) + 1;
+
+    std::cout << "\n     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n\n";
+
+    for (int i = 0; i < nlines; i++) {
+        std::cout << std::setfill('0') << std::setw(3) << std::uppercase
+                  << std::hex << baseAddr + 0x10 * i << ": ";
+        for (int j = 0; j < 16; j++) {
+            std::cout << std::setfill('0') << std::setw(2) << std::uppercase
+                  << std::hex << (uint)vnm->memRead_b((baseAddr + 0x10 * i)+j) << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
 }
