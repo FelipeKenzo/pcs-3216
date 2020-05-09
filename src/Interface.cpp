@@ -112,6 +112,34 @@ void Interface::input() {
                 }
                 break;
 
+            case build: {
+                std::string out = "./filesystem/a";
+                std::string src = "./filesystem/";
+                bool warnings;
+                if (argc > 1) {
+                    std::string arg; 
+                    for (int i = 1; i < argc; i++) {
+                        arg = argv[i];
+                        if (arg == "-o") {
+                            out = "./filesystem/" + argv[++i];
+                        }
+                        else if (arg == "-w" || arg == "--warnings") {
+                            warnings = true;
+                        }
+                        else {
+                            src += argv[i];
+                        }
+                    }
+                }
+                else {
+                    std::cout << "load [source]* [-w|--warning] [-o outname].\n";
+                    break;
+                }
+
+                buildSrc(src, out, warnings);
+                break;
+            }
+
             case run:
                 if (argc == 2) {
                     runVnm(argv[1]);
@@ -154,22 +182,34 @@ void Interface::input() {
                     std::cerr << "set [reg] [data]\n";
                 }
                 break;
+            
             case md: {
                 std::string range = "0";
                 if (argc == 1) {
-                    std::cerr << "md: missing memory address.\n";
+                    std::cerr << "md [address]* [range].\n";
                     break;
                 }
                 else if (argc == 3) {
                     range = argv[2];
                 }
                 else if (argc > 3) {
-                    std::cerr << "md: too many parameters.\n";
+                    std::cerr << "md [address]* [range].\n";
                     break;
                 }
                 displayMemory(argv[1], range);
                 break;
             }
+
+            case mm: 
+                if (argc == 1) {
+                    std::cerr << "mm [address]* [data]\n";
+                    break;
+                }
+                else if (argc == 2) modifyMemory(argv[1], "");
+                else if (argc == 3) modifyMemory(argv[1], argv[2]);
+                else std::cerr << "mm [address]* [data]\n";
+                break;
+
             default:
                 std::cerr << "\"" << argv[0] << "\" is not a valid command.\n";
                 break;
@@ -182,6 +222,14 @@ void Interface::assembleSrc(std::string src, std::string out, bool w) {
 
     Assembler* a = new Assembler(src, out, w);
     a->assemble();
+    delete a;
+}
+
+void Interface::buildSrc(std::string src, std::string out, bool w) {
+    Assembler* a = new Assembler(src, out, w);
+    if (a->assemble()){
+        loadProgram(eraseSubStr(out, "./filesystem/") + ".vnc");
+    }
     delete a;
 }
 
@@ -302,7 +350,7 @@ void Interface::loadProgram(std::string vnc) {
     inFile.open("./filesystem/" + vnc);
 
     if (!inFile.is_open()) {
-        std::cerr << "load: file \"" << vnc << "\" could not be opened.";
+        std::cerr << "load: file \"" << vnc << "\" could not be opened.\n";
     }
 
     vnm->setPC(0x000);
@@ -329,13 +377,13 @@ void Interface::runVnm(std::string addr) {
         return;
     }
 
-    if(!isNumber(addr)) {
+
+    if (isDec(addr)) start = std::stoi(addr);
+    else if (addr[0] == '$' && isHex(addr)) start = htoi(addr);
+    else {
         std::cerr << "run: invalid start address.\n";
         return;
     }
-
-    if (addr[0] == '$') start = htoi(addr);
-    else start = std::stoi(addr);
 
     if (start > 0xFFF) {
         std::cerr << "run: invalid start address.\n";
@@ -358,13 +406,12 @@ void Interface::stepVnm(std::string addr) {
         return;
     }
 
-    if(!isNumber(addr)) {
+    if (isDec(addr)) start = std::stoi(addr);
+    else if (addr[0] == '$' && isHex(addr)) start = htoi(addr);
+    else {
         std::cerr << "step: invalid start address.\n";
         return;
     }
-
-    if (addr[0] == '$') start = htoi(addr);
-    else start = std::stoi(addr);
 
     if (start > 0xFFF) {
         std::cerr << "step: invalid start address.\n";
@@ -401,14 +448,12 @@ void Interface::setReg(std::string reg, std::string data) {
         return;
     }
 
-    if (!isNumber(data)) {
+    if (isDec(data)) dataValue = std::stoi(data);   
+    else if (data[0] == '$' && isHex(data)) dataValue = htoi(data);
+    else {
         std::cerr << "setReg: invalid data value\n";
         return;
     }
-    
-
-    if (data[0] == '$') dataValue = htoi(data);
-    else dataValue = std::stoi(data);
 
     if (reg == "ac") {
         if (dataValue > 0xFFFF) {
@@ -487,14 +532,14 @@ void Interface::loadLoader() {
 }
 
 void Interface::displayMemory(std::string addr, std::string range) {
-    if (!isNumber(addr)) {
+    uint16_t numAddr;
+
+    if (isDec(addr)) numAddr = std::stoi(addr);   
+    else if (addr[0] == '$' && isHex(addr)) numAddr = htoi(addr);
+    else {
         std::cerr << "md: invalid memory address.\n";
         return;
     }
-
-    uint16_t numAddr;
-    if (addr[0] == '$') numAddr = htoi(addr);
-    else numAddr = std::stoi(addr);
 
     if (numAddr > 0xFFF) {
         std::cerr << "md: invalid memory address.\n";
@@ -503,18 +548,25 @@ void Interface::displayMemory(std::string addr, std::string range) {
 
     uint16_t baseAddr = numAddr & 0xFF0;
 
-    uint16_t numRange = std::stoi(range);
+    uint16_t numRange;
 
-    if (!isNumber(range)) {
+    if (isDec(range)) numRange = std::stoi(range);   
+    else if (range[0] == '$' && isHex(range)) numRange = htoi(range);
+    else {
         std::cerr << "md: invalid range value.\n";
         return;
     }
 
+
     uint16_t endAddr = numAddr + numRange;
+    //std::cout << std::hex << endAddr << "\n";
+
+    //std::cout << std::hex << (((endAddr & 0xFF0) - baseAddr) >> 4);
 
     uint16_t nlines = (((endAddr & 0xFF0) - baseAddr) >> 4) + 1;
 
-    std::cout << "\n     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n\n";
+    std::cout << "\n     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n"
+              << "     -----------------------------------------------\n";
 
     for (int i = 0; i < nlines; i++) {
         std::cout << std::setfill('0') << std::setw(3) << std::uppercase
@@ -526,4 +578,72 @@ void Interface::displayMemory(std::string addr, std::string range) {
         std::cout << "\n";
     }
     std::cout << "\n";
+}
+
+void Interface::modifyMemory(std::string addr, std::string data) {
+    uint16_t numAddr;
+
+    if (isDec(addr)) numAddr = std::stoi(addr);
+    else if (addr[0] == '$' && isHex(addr)) numAddr = htoi(addr);
+    else {
+        std::cerr << "mm: invalid memory address.\n";
+        return;
+    }
+
+    if (numAddr > 0xFFF) {
+        std::cerr << "mm: invalid memory address.\n";
+        return;
+    }
+
+    if (data != "") {
+        uint16_t numData;
+        if (isDec(data)) numData = std::stoi(data);
+        else if (data[0] == '$' && isHex(data)) numData = htoi(data);
+        else {
+            std::cerr << "mm: invalid data value.\n";
+            return;
+        }
+
+        if (numData > 0xFF) {
+            std::cerr << "mm: invalid data value.\n";
+            return;
+        }
+
+        vnm->memWrite_b(numAddr, numData);
+        return;
+    }
+    else {
+        std::string in;
+
+        while(numAddr < 0xFFF) {
+            std::cout << std::setfill('0') << std::setw(3) << std::uppercase
+                    << std::hex << addr << "    " << std::setw(2)
+                    << (uint16_t)vnm->memRead_b(numAddr) << "  ? ";
+
+            std::cin >> in;
+
+            if (in == ".") break;
+
+            uint16_t numData;
+            if (isDec(in)) numData = std::stoi(in);
+            else if (in[0] == '$' && isHex(in)) numData = htoi(in);
+            else {
+                std::cerr << "mm: invalid data value.\n";
+                return;
+            }
+
+            if (numData > 0xFF) {
+                std::cerr << "mm: invalid data value.\n";
+                return;
+            }
+
+            vnm->memWrite_b(numAddr, numData);
+            numAddr++;
+        }
+
+        std::cout << "\n";
+        return;
+    }
+
+
 }

@@ -63,6 +63,26 @@ bool isNumber(const std::string& s) {
     return true;
 }
 
+bool isDec(const std::string& s) {
+    for (int i = 0; i < s.length(); i++) {
+        if ((s[i] < '0') || s[i] > '9') return false;
+    }
+    return true;
+}
+
+bool isHex(const std::string& s) {
+    int i = 0;
+    if (s[0] == '$') {
+        i++;
+    }
+
+    for (i; i < s.length(); i++) {
+        if (((s[i] < '0') || (s[i] > '9')) && ((s[i] < 'A')||(s[i] > 'F')))
+            return false;
+    }
+    return true;
+}
+
 std::string eraseSubStr(const std::string & mainStr, const std::string & toErase)
 {
     std::string newStr = mainStr;

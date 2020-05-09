@@ -36,7 +36,7 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
             ac = pa;
             break;
         case ADD:
-            if (debug) std::cout << "ADD " << (uint16_t)mem[pa] << " ";
+            if (debug) std::cout << "ADD ";
             ac += memRead_b(pa);
             break;
         case SUB:
@@ -178,7 +178,7 @@ uint16_t VonNeumannMachine::readInput() {
 
     uint intByte;
     
-    if (isNumber(byte)) {
+    if (isHex(byte)) {
         intByte = htoi(byte);
         return intByte;
     }

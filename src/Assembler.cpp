@@ -186,9 +186,11 @@ bool Assembler::firstStep(std:: ifstream& src) {
             if (isNumber(operand)) {
                 
                 uint32_t addr;
-                if (operand[0] == '$') addr = htoi(operand);  // operand in HEX
-                else addr = std::stoi(operand);               // operand in DEC
-
+                if (operand[0] == '$' && isHex(operand)) addr = htoi(operand);  // operand in HEX
+                else if (isDec(operand)) addr = std::stoi(operand);             // operand in DEC
+                else {
+                    
+                }
                 // Checks if valid operand                
                 if (addr > 0xFFF) {
                     std::cerr << "Error(" << lc << "): invalid operand value.\n";

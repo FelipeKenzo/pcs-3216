@@ -14,8 +14,14 @@ std::uint64_t htoi(const std::string& hex);
 // Splits string into vector of words
 std::vector<std::string> split(const std::string& str, char delim);
 
-// Returns if string ias a number (either hex or dec)
+// Returns true if given string representas a number (either Hex our Dec)
 bool isNumber(const std::string& s);
+
+// Returns true if given string represents a decimal number
+bool isDec(const std::string& s);
+
+// Returns true if given string represents a hexadecimal number
+bool isHex(const std::string& s);
 
 // returns a main string without a substring
 std::string eraseSubStr(const std::string& mainStr, const std::string &toErase);

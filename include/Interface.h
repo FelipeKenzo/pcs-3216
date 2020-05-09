@@ -20,6 +20,7 @@ private:
     void exitMessage();
     void helpMessage();
     void assembleSrc(std::string src, std::string out, bool w);
+    void buildSrc(std::string src, std::string out, bool w);
     void runVnm(std::string addr);
     void stepVnm(std::string addr);
     void listFiles();
@@ -29,8 +30,9 @@ private:
     void vnmTurnOff();
     void loadProgram(std::string vnc);
     void printFile(std::string file);
-    void setReg(std::string reg, std::string random_data);
+    void setReg(std::string reg, std::string data);
     void displayMemory(std::string addr, std::string range);
+    void modifyMemory(std::string addr, std::string data);
 
     std::ifstream inFile;
     std::ofstream outFile;
@@ -38,12 +40,13 @@ private:
     enum command {
         invalid, exit, assemble, help, ls,
         rm, status, turn, load, run, print,
-        step, set, md, mm
+        step, set, md, mm, build
     };
 
     std::map<std::string, command> commandMap = {
         {"exit", exit},
         {"assemble", assemble},
+        {"build", build},
         {"help", help},
         {"ls", ls},
         {"rm", rm},
