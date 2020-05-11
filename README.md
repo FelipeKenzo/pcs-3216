@@ -74,7 +74,7 @@ Os comandos disponíveis estão apresentados a seguir. São descritos em maior d
 | `set [register] [data]` | modifica o conteúdo de um registrador (AC ou PC).
 | `status` | imprime o conteúdo dos registradores da MVN.
 | `step [address]` | executa as instruções da MVN passo-a-passo, pressionando `enter`.
-| `turn [on|off]` | liga ou desliga a MVN. |
+| `turn [on off]` | liga ou desliga a MVN. |
 
 ### Assembler
 
