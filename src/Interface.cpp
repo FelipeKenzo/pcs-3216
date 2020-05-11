@@ -234,7 +234,7 @@ void Interface::buildSrc(std::string src, std::string out, bool w) {
 }
 
 void Interface::helpMessage() {
-    std::cout << "Note: parameters with '*' are mandatory.\n\n"
+    std::cout << "\nNote: parameters with '*' are mandatory.\n\n"
               << "assemble: assembles a .asm source file into a .vnc hex file and .lst list file.\n"
               << "usage: assemble [source]* [-w|--warning] [-o outname]\n"
               << "      [source]*        source file name (with extension)\n"
@@ -247,6 +247,16 @@ void Interface::helpMessage() {
               << "      [program]*       program file name (with extension)\n\n"
               << "ls: list files in the filesystem.\n\n"
               << "print: prints the contents of a file to the terminal.\n"
+              << "md: displays the contents of a memory address and it's chunk. If a range is provided, displays\n"
+              << "    the contents until address + range, also in chunks.\n"
+              << "usage: md [address]* [range]\n"
+              << "      [address*]       memory address to be displayed.\n"
+              << "      [range]          the range of addresses to be displayed.\n\n"
+              << "mm: modifies the contents of a memory address. If no data is given, it asks the user until\n"
+              << "    they enter '.'\n"
+              << "usage: mm [address]* [data]\n"
+              << "      [address]*       memory address to be modified.\n"
+              << "      [data]           value to be stored at the address.\n\n"
               << "usage: print [file]*\n"
               << "      [file]*          file name (with extension)\n\n"
               << "rm: removes (deletes) file(s) from the filesystem.\n"

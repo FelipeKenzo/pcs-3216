@@ -15,7 +15,7 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
                   << "$" << std::right << std::setfill('0') 
                   << std::setw(3) << std::hex << pc-2 << "  "
                   << std::setw(2) << std::hex << (uint16_t)mem[pc - 2] << " "
-                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 1] << "  ";
+                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 1] << "        ";
     }
 
     switch(op) {
@@ -90,11 +90,11 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
 
     if (debug) {
         std::cout << std::right << std::setfill('0') << std::setw(3) << std::uppercase
-                  << std::hex << pa << "\n"
+                  << std::hex << pa << "\n\n"
+                  << "ac: $" << std::right << std::setfill('0') << std::setw(2)
+                  << std::hex << (uint16_t)ac << "    "
                   << "pc: $" << std::right << std::setfill('0') << std::setw(3)
                   << std::hex << pc << "\n"
-                  << "ac: $" << std::right << std::setfill('0') << std::setw(2)
-                  << std::hex << (uint16_t)ac << "\n"
                   << "---------------------------\n";
     }
 
@@ -104,11 +104,16 @@ void VonNeumannMachine::run() {
     halted = false;
 
     while (!halted) {
+        if (pc >= 0xFFF) {
+            std::cerr << "run: invalid memory address (" << std::uppercase << std::hex << pc << ").\n";
+            return;
+        }
+
         // Fetch instruction
         uint16_t instr = memRead_w(pc);
         pc += 2;
 
-       executeInstruction(instr, false); 
+        executeInstruction(instr, false); 
     }
 
 }
@@ -119,6 +124,11 @@ void VonNeumannMachine::step() {
     std::string input;
 
     do {
+        if (pc >= 0xFFF) {
+            std::cerr << "step: invalid memory address (" << std::uppercase << std::hex << pc << ").\n";
+            return;
+        }
+
         // Fetch instruction
         uint16_t instr = memRead_w(pc);
         pc += 2;
@@ -188,11 +198,6 @@ uint16_t VonNeumannMachine::readInput() {
 }
 
 void VonNeumannMachine::writeOutput() {
-    // std::cout << "output: " << std::setfill('0') << std::setw(2)
-    //           << std::right << std::hex << (uint)ac << "\n";
-
-    //std::cout << (*output).is_open() << "\n";
-
     (*output) << std::setfill('0') << std::setw(2)
               << std::right << std::uppercase << std::hex << (uint)ac;
     (*output).flush();

@@ -23,6 +23,7 @@ private:
     void buildSrc(std::string src, std::string out, bool w);
     void runVnm(std::string addr);
     void stepVnm(std::string addr);
+    void autostepVnm(std::string addr);
     void listFiles();
     void removeFiles(std::vector<std::string> files);
     void showVnmStatus();
