@@ -40,6 +40,10 @@ As operações disponíveis são:
 A parte de *input/output* é feita por meio de arquivos em *plain text* dentro da pasta `/filesystem`. Por *default*, o arquivo
 de entrada é o `input.txt` e o de saída é o `output.txt`.
 
+### O Motor de Eventos
+
+A MVN foi implementada utilizando o conceito de um motor de eventos. Isto é, em um loop de simulação, a MVN busca uma instrução na memória, decodifica sua operação e operandos e ativa os procedimentos específicos de reação para a simulação das intstruções correspondentes. Ao final de um ciclo, atualiza o ponteiro (*program counter*) para o endereço da prócima instrução a ser executada.
+
 ## Utilização
 
 A interface com o usuário é feita por meio de uma interface de linha de comando (CLI):
