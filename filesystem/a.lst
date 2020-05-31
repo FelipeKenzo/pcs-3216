@@ -1,0 +1,87 @@
+Listing for source file "./filesystem/questao2.asm".
+Note: memory is Little-Endian.
+
+                    ORG  $415   
+415 85        LD_1  CON  $85    ; LD $508 (bit mais significativo)
+416 08        LD_2  CON  $08    ; LD $508 (bit menos significativo)
+417 A4 53           SC   ATOH   ; Converte o caractere lido para hexadecimal
+419 45 01           ADD  ACUM   ; Soma com o acumulador
+41B 95 01           MM   ACUM   ; Atualiza o acumulador
+41D 65 03           MUL  CON1   ; Shifta 4 bits para a esquerda
+41F 75 03           DIV  CON1   ; Shifta 4 bits para a direita (isola o nibble)
+421 A4 6A           SC   HTOA   ; Converte esse nibble para ascii
+423 95        MM_1  CON  $95    ; MM $510 (bit mais significativo)
+424 10        MM_2  CON  $10    ; MM $510 (bit menos significativo)
+425 E0 00           PD          ; Imprime o nibble em ascii na fita
+427 85 00           LD   COUNT  ; Carrega valor do contador
+429 55 02           SUB  UM     ; Subtraio um
+42B 95 00           MM   COUNT  ; Atualiza o valor do contador
+42D 14 51           JZ   END    ; Se for zero, acabou o programa
+42F 84 16           LD   LD_2   ; Carrego o MSB do endereço de leitura
+431 45 02           ADD  UM     ; Somo um
+433 94 16           MM   LD_2   ; Atualizo o endereço
+435 14 41           JZ   INCR_1 ; Se houve overflow, preciso incrementar o MSB.
+437 84 24     CONT  LD   MM_2   ; Carrego o MSB do endereço de escrita
+439 45 02           ADD  UM     ; Somo um
+43B 94 24           MM   MM_2   ; Atualizo o endereço
+43D 14 49           JZ   INCR_2 ; Se houve overflow, preciso incrementar o MSB.
+43F 04 15           JP   LD_1   ; Retorna ao loop
+441 84 15   INCR_1  LD   LD_1   
+443 45 02           ADD  UM     ; incrementa byte mais significativo
+445 94 15           MM   LD_1   
+447 04 37           JP   CONT   ; prossegue para atualizar endereço de escrita
+449 84 23   INCR_2  LD   MM_1   
+44B 45 02           ADD  UM     ; incrementa byte mais significativo
+44D 94 23           MM   MM_1   
+44F 04 15           JP   LD_1   ; e vai executar outra instancia do loop
+451 C4 15      END  HM   LD_1   ; Fim do programa, halt
+453 00 00     ATOH  JP   $000   ; Retorno da sub-rotina
+455 94 69           MM   ASCII  ; Salva o valor em ascii.
+457 55 04           SUB  CON2   ; Compara com A em ascii.
+459 24 5D           JN   SUB30  ; Se for negativo, o número está entre 0-9
+45B 04 63           JP   SUB37  ; Caso contrário, está entre 10 - 15
+45D 84 69    SUB30  LD   ASCII  ; Recupera o valor original
+45F 55 05           SUB  CON3   ; Converto para decimal subtraindo $30
+461 B4 53           RS   ATOH   ; Retorno
+463 84 69    SUB37  LD   ASCII  ; Recupera o valor original
+465 55 06           SUB  CON4   ; Converto para decimal subtraindo $37
+467 B4 53           RS   ATOH   ; Retorno
+469 00       ASCII  CON  $00    ; Guarda o valor original em ascii.
+46A 00 00     HTOA  JP   $000   ; Retorno da sub-rotina
+46C 94 80           MM   HEX    ; Salva o valor em hexadecimal
+46E 55 07           SUB  CON6   ; Comparo com 10
+470 24 74           JN   ADD_30 ; Se for negativo, o número está entre 0-9
+472 04 7A           JP   ADD_37 ; Caso contrário, está entre 10-15
+474 84 80   ADD_30  LD   HEX    ; Recupera o valor original
+476 45 05           ADD  CON3   ; Converto para ascii somando $30
+478 B4 6A           RS   HTOA   ; Retorno
+47A 84 80   ADD_37  LD   HEX    ; Recupera o valor original
+47C 45 06           ADD  CON4   ; Converto para ascii somando $37
+47E B4 6A           RS   HTOA   ; Retorno
+480 00         HEX  CON  $00    ; Guarda o valor original em hexadecimal
+                    ORG  $500   
+500 08       COUNT  CON  $08    ; Contador
+501 00        ACUM  CON  $00    ; Acumulador
+502 01          UM  CON  $01    ; Constante de valor 1
+503 10        CON1  CON  $10    ; Constante de valor 16
+504 41        CON2  CON  $41    ; Constante de valor $41
+505 30        CON3  CON  $30    ; Constante de valor $30
+506 37        CON4  CON  $37    ; Constante de valor $37
+507 0A        CON6  CON  10     ; Constante de valor 10
+508 35        NUSP  CON  $35    ; '5'
+509 31              CON  $31    ; '1'
+50A 34              CON  $34    ; '4'
+50B 34              CON  $34    ; '4'
+50C 37              CON  $37    ; '7'
+50D 32              CON  $32    ; '2'
+50E 30              CON  $30    ; '0'
+50F 31              CON  $31    ; '1'
+510 00      CODIGO  CON  $00    
+511 00              CON  $00    
+512 00              CON  $00    
+513 00              CON  $00    
+514 00              CON  $00    
+515 00              CON  $00    
+516 00              CON  $00    
+517 00              CON  $00    
+                    END         

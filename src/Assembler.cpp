@@ -186,6 +186,7 @@ bool Assembler::firstStep(std:: ifstream& src) {
             if (isNumber(operand)) {
                 
                 uint32_t addr;
+                //std::cout << operand << "\n";
                 if (operand[0] == '$' && isHex(operand)) addr = htoi(operand);  // operand in HEX
                 else if (isDec(operand)) addr = std::stoi(operand);             // operand in DEC
                 else {

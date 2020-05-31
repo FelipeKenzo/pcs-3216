@@ -1,0 +1,82 @@
+1 ;
+2 ; ====== PROGRAMA FONTE PARA A PRIMEIRA QUESTÃO DA PROVA  =======
+3 ;
+4       @    /100
+5 ; inicia contador de letras
+6 START LDA  COMP   ; comprimento do vetor de letras
+7       MM   CONT   ; inicia o contador do loop
+8 ; constrói inicialmente a instrução LDA INIC adiante
+9 ; (a ser incrementada a cada execução do loop)
+10 ;
+11 IN    LDA  LDA0
+12       MM   LDA
+13       LDA  LDA0+1
+14       MM   LDA+1
+15 ;
+16 ; executa a instrução construída logo a seguir:
+17 LDA   LDA  INIC   ; pega a próxima letra no vetor de letras
+18       PD   SAIDA  ; grava-a no arquivo de saída
+19 ;
+20 ; testa se é a última letra
+21       LDA  CONT
+22       -    UM     ; decrementa contador do loop
+23       MM   CONT
+24       JZ   FORA   ; se zerar, terminou o loop, se não, prossegue
+25 ;
+26 ; incrementa o endereço a ser acessado no vetor de letras
+27       LDA  LDA+1
+28       +    UM     ; incrementa byte menos significativo
+29       MM   LDA+1
+30 ;
+31       JZ   INCR   ; se deu zero, vai incrementar o outro byte
+32       JP   LDA    ; se não, executa mais uma instancia do loop
+33 ;
+34 ; incrementa o byte mais significativo do endereço a acessar
+35 INCR  LDA  LDA    
+36       +    UM     ; incrementa byte mais significativo
+37       MM   LDA
+38       JP   LDA    ; e vai executar outra instancia do loop
+39 ;
+40 ; final do loop
+41 FORA  HM   START  ; pára a máquina e volta ao início se for reacionada
+42 ;
+43 ; ========================================================================
+44 ;
+45 ; Dispositivos virtuais de entrada e saída
+46 ;
+47 ; os endereços 3 e 4 são reservados para operarem como registradores de dados 
+48 ; da interface dos dispositivos de entrada e saída respectivamente. 
+49 ;
+50 ; A instrução GD da MVN deposita na posição reservada 3 de memória o byte lido 
+51 ; a partir do arquivo texto que simula a fita de entrada.
+52 ;
+53 ; A instrução PD da MVN extrai da posição reservada 4 de memória o byte 
+54 ; a ser transferido para o arquivo texto que simula a fita de saída.
+55 ;
+56       @   3
+57 ENTRADA           ; 3 = endereço do dispositivo virtual de entrada
+58       @   4
+59 SAIDA             ; 4 = endereço do dispositivo virtual de saída
+60 ;
+61 ; ==========================  ÁREA DE DADOS   ============================
+62 ;
+63       @   /200    ; a partir do endereço /200
+64 ;
+65 ; constantes e variáveis
+66 ;
+67 UM    K   1       ; constante 1
+68 CONT  K   0       ; variável CONT iniciada com zero
+69 LDA0  LDA INIC    ; código da instrução LDA INIC
+70 ;
+71 ; área do texto a ser manipulado
+72       @   /F00    ; este texto está alocado no endereço /F00 e seguintes
+73 COMP  K   5       ; comprimento do texto
+74 INIC  K   "t"     ; primeira letra do texto
+75       K   "e"
+76       K   "x"
+77       K   "t"
+78       K   "o"     ; última letra do texto
+79 ;
+80 ; ========================================================================
+81 ;
+82       #    START  ; o  endereço inicial do programa é START.
