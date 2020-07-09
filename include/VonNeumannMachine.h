@@ -25,8 +25,8 @@ private:
     uint16_t pc = 0;
     
     // Input/Output
-    std::ifstream* input;
-    std::ofstream* output;
+    std::ifstream* input = NULL;
+    std::ofstream* output = NULL;
 
     // Halt flags
     bool halted = false;
@@ -60,6 +60,9 @@ private:
 
 public:
     VonNeumannMachine(std::ifstream* input, std::ofstream* output);
+    VonNeumannMachine();
+    void setInput(std::ifstream* input);
+    void setOutput(std::ofstream* output);
     void run();
     void step();
     void halt();

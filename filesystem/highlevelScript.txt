@@ -1,0 +1,13 @@
+        WRITE 23 + 12;
+        READ val;
+        LET min = val;
+        LET max = val;
+
+LOOP:   GOTO max IF val > min;
+        LET min = val;
+max:    GOTO end IF val < max;
+        LET max = val;
+end:    WRITE min;
+        WRITE max;
+        READ val; 
+        GOTO LOOP IF val > 0;

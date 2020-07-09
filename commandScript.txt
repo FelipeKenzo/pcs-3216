@@ -1,0 +1,8 @@
+$JOB kenzo
+$DISK filesystem
+$INFILE input.txt
+$OUTFILE output.txt
+$LIST input.txt
+$RUN highlevelScript.txt
+$LIST output.txt
+$ENDJOB kenzo

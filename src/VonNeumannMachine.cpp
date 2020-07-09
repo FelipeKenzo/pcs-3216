@@ -4,6 +4,17 @@ VonNeumannMachine::VonNeumannMachine(std::ifstream* input, std::ofstream* output
     input(input), output(output){
 }
 
+VonNeumannMachine::VonNeumannMachine() {
+}
+
+void VonNeumannMachine::setInput(std::ifstream* input) {
+    this->input = input;
+}
+
+void VonNeumannMachine::setOutput(std::ofstream* output) {
+    this->output = output;
+}
+
 void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     
     // Decode instruction
@@ -178,6 +189,12 @@ void VonNeumannMachine::memWrite_b(uint16_t addr, uint16_t data) {
 
 uint16_t VonNeumannMachine::readInput() {
 
+    if (input == NULL) {
+        std::cerr << "VNM: Error: no input file. Halting machine.\n";
+        halt();
+        return 0;
+    }
+
     char firstNibble = (*input).get();
     char secondNibble = (*input).get();
 
@@ -198,6 +215,12 @@ uint16_t VonNeumannMachine::readInput() {
 }
 
 void VonNeumannMachine::writeOutput() {
+    if (output == NULL) {
+        std::cerr << "VNM: Error: no output file. Halting machine.\n";
+        halt();
+        return;
+    }
+
     (*output) << std::setfill('0') << std::setw(2)
               << std::right << std::uppercase << std::hex << (uint)ac;
     (*output).flush();
