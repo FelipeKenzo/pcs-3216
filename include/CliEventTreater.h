@@ -33,6 +33,7 @@ protected:
     std::string disk = "";
     std::string diskfile = "";
     std::string inputPath = "";
+    std::string outputPath = "";
     std::ifstream input;
     std::ofstream output;
 

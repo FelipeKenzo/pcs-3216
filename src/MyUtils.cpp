@@ -1,4 +1,5 @@
 #include "../include/MyUtils.h"
+#include <limits>
 
 std::uint64_t htoi(const std::string& hex) {
     //std::cout << "hex number: (" << hex << ")\n";
@@ -121,8 +122,18 @@ uint16_t calculateChecksum(uint16_t addr, uint16_t size, std::vector<uint8_t> da
     
     // Isolate last byte
     chks = chks & 0x00FF;
-
-    // std::cout << std::hex << chks << "\n";
     
     return chks;
+}
+
+void GotoLine(std::ifstream* file, unsigned int num) {
+    (*file).seekg(std::ios::beg);
+    std::string trash;
+    for (uint line = 0; line < num; line++) {
+        char c = 'a';
+        while (c != '\n') {
+            c = (*file).get();
+        }
+    }
+    return;
 }

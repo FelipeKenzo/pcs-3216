@@ -1,0 +1,47 @@
+Listing for source file "filesystem/overlay.asm".
+Note: memory is Little-Endian.
+
+                   ORG  $100  
+100 01        ONE  CON  1     
+101 30 0F          LV   $F    
+103 11 09   LOOP1  JZ   END1  ; Meaningless loop
+105 51 00          SUB  ONE   
+107 01 03          JP   LOOP1 
+109 F0 00    END1  OS   $0    ; Overlay Driver (load)
+10B 01             CON  $1    ;     |- Overlay A
+10C 01             CON  $01   ;     |- At address $114
+10D 14             CON  $14   
+10E F0 00          OS   $0    ; Overlay Driver (load)
+110 02             CON  $2    ;     |- Overlay B
+111 01             CON  $01   ;     |- At address $114
+112 14             CON  $14   
+113 C0 00          HM   $00   ; Halt machine - end of execution
+                   OVS        ; Indicates to assembler start of overlay block
+000 30 0A          LV   $A    
+002 E0 00          PD         
+004 F0 00          OS   $0    ; Overlay Driver (load)
+006 03             CON  $3    ;     |- Overlay AA
+007 00             CON  $00   ;     |- At address $010
+008 10             CON  $10   
+009 F0 00          OS   $0    ; Overlay Driver (load)
+00B 04             CON  $4    ;     |- Overlay AB
+00C 00             CON  $00   ;     |- At address $010
+00D 10             CON  $10   
+00E F0 01          OS   $1    ; Overlay Driver (return)
+                   OVE        ; Indicates to assembler end of overlay block
+                   OVS        ; Indicates to assembler start of overlay block
+000 30 0B          LV   $B    
+002 E0 00          PD         
+004 F0 01          OS   $1    ; Overlay Driver (return)
+                   OVE  $1    ; Indicates to assembler end of overlay block
+                   OVS        ; Indicates to assembler start of overlay block
+000 30 AA          LV   $AA   
+002 E0 00          PD         
+004 F0 01          OS   $1    ; Overlay Driver (return)
+                   OVE        ; Indicates to assembler end of overlay block
+                   OVS        ; Indicates to assembler start of overlay block
+000 30 BB          LV   $BB   
+002 E0 00          PD         
+004 F0 01          OS   $1    ; Overlay Driver (return)
+                   OVE        ; Indicates to assembler end of overlay block
+                   END        

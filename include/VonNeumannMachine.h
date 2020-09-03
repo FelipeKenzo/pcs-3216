@@ -10,8 +10,9 @@
 #include <locale>     // for input parsing (uppercase)
 #include <algorithm>  // for input parsing (transform)
 #include <fstream>
+#include <stack>
 
-#include "../include/MyUtils.h"
+#include "MyUtils.h"
 
 #define MEM_SIZE 4096 // 4KB
 
@@ -21,8 +22,9 @@ private:
     uint8_t mem[MEM_SIZE] = {0};
     
     // Registers
-    uint8_t ac = 0;
-    uint16_t pc = 0;
+    uint8_t  ac = 0; // Accumulator
+    uint16_t pc = 0; // Program Counter
+    uint16_t of = 0; // Offset Register
     
     // Input/Output
     std::ifstream* input = NULL;
@@ -74,6 +76,13 @@ public:
     uint8_t  memRead_b(uint16_t addr);
     void memWrite_w(uint16_t addr, uint16_t data);
     void memWrite_b(uint16_t addr, uint16_t data);
+
+    // Overlay Driver
+    void loadOverlay(uint8_t block, uint16_t offset);
+    void endOverlay();
+    uint8_t savedAc;
+    std::stack<uint16_t> returns;
+    std::stack<uint16_t> offsets;
 };
 
 #endif

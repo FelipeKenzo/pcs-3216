@@ -1,11 +1,4 @@
-23 + 12 = 35
-min = 15
-max = 15
-min = 15
-max = 79
-min = 6
-max = 79
-min = 6
-max = 80
-min = 2
-max = 80
+0A
+AA
+BB
+0B

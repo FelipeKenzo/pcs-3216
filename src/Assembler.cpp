@@ -202,6 +202,9 @@ bool Assembler::firstStep(std:: ifstream& src) {
                 // If it is, it could be the ORG operand. Then, we update PC.
                 if (mnemonic == "ORG") pc = addr;
 
+                // Or the start of an overlay:
+                if (mnemonic == "OVS") pc = 0;
+
             }
             // if not, it is a label:
             else {
@@ -267,6 +270,8 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
     
     bool isEnd = false;               // Program End flag
     bool isError = false;             // Error flag
+    bool overlay = false;             // If is an overlay block
+    bool definedAddress = false;
 
     lst << "Listing for source file \"" << srcFilename << "\".\n";
     lst << "Note: memory is Little-Endian.\n\n";
@@ -321,6 +326,9 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
         }
 
         if (mnemonic == "END") isEnd = true;
+
+        if (mnemonic == "OVS") pc = 0;
+
 
         // Calculate machine code
         if (mnemonic == "CON") {
@@ -396,26 +404,21 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
 
         // Only real instructions are generated
         if (mTable[mnemonic].size > 0) {
-            if (addr == 0) {
-                // std::cout << data.size() << "\n";
-                // for (int i = 0; i < data.size(); i++) {
-                //     std::cout << (uint)data[i] << " ";
-                // }
-                // std::cout << "\n";
+            if (!definedAddress) {
                 if (data.size() == 3) addr = pc - 1;
                 else addr = pc;
+                definedAddress = true;
             }
         }
-        
+
         // End block and write to vnc file
-        if ((data.size() >= 15 || mnemonic == "ORG" || isEnd) && addr) {
-            //std::cout << "ENTRI\n";
-            //std::cout << size << "\n";
-            if (data.size() > 15) size = 15;
-            else size = data.size();
+        if ((data.size() >= 15 || mnemonic == "ORG" || mnemonic == "OVS" || isEnd || overlay) && definedAddress) {
+            size = data.size();
             vnc << std::right << std::setfill('0') <<  std::uppercase
                 << std::setw(4) << std::hex  << addr  // write address
                 << std::setw(2) << size;              // write size
+
+            // std::cout << size << "\n";
 
             for (int i = 0; i < size; i++) {
                 vnc << std::setw(2) << std::hex << (uint16_t)data[i];
@@ -433,11 +436,25 @@ void Assembler::secondStep(std::ifstream& src, std::ofstream& lst, std::ofstream
             chks = 0;
             addr = 0;
             size = 0;
+            definedAddress = false;
+        }
+
+        if (mnemonic == "OVS") {
+            //std::cout << addr << " " << data[0] << "\n";
+            vnc << "FF\n";
+
+            data.erase(data.begin(), data.begin() + data.size());
+            chks = 0;
+            addr = 0;
+            size = 0;
         }
 
         pc += mTable[mnemonic].size;
+        // if (mnemonic == "OVS") {
+        //     std::cout << pc << "\n";
+        // }
     }
-    vnc << "0000";
+    vnc << "FF";
 
     return;
 }
@@ -475,7 +492,7 @@ bool Assembler::assemble() {
 
     // Open hex output file
     std::ofstream vnc;
-    vnc.open(outFilename + ".vnc");
+    vnc.open(outFilename);
 
     if (!vnc.is_open()) {
         std::cerr << "Could not create \"" << outFilename << ".o\"; Exiting program.\n";

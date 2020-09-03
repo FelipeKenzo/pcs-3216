@@ -74,6 +74,8 @@ private:
     mnemonicData org = {16, pseudo, 0, true };
     mnemonicData end = {16, pseudo, 0, false};
     mnemonicData con = {16, pseudo, 1, true };
+    mnemonicData ovs = {16, pseudo, 0, false};
+    mnemonicData ove = {16, pseudo, 0, false};
 
     // Mnemonic Table
     std::map<std::string, mnemonicData> mTable = {
@@ -81,7 +83,8 @@ private:
         {"ADD", add}, {"SUB", sub}, {"MUL", mul}, {"DIV",  dv},
         {"LD" ,  ld}, {"MM" ,  mm}, {"SC" ,  sc}, {"RS" ,  rs},
         {"HM" ,  hm}, {"GD" ,  gd}, {"PD" ,  pd}, {"OS" ,  os},
-        {"ORG", org}, {"END", end}, {"CON", con}
+        {"ORG", org}, {"END", end}, {"CON", con}, {"OVS", ovs},
+        {"OVE", ove}
     };
 
     // Symbol Table

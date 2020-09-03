@@ -1,0 +1,58 @@
+Listing for source file "filesystem/loader.asm".
+Note: memory is Little-Endian.
+
+000 80 0B              LD   FAIL      
+002 50 0B              SUB  FAIL      
+004 90 0B              MM   FAIL      ; Resets fail flag
+006 00 0E              JP   READADDR  ; Jumps data area to first instruction
+008 00        COUNTER  CON  $00       ; Counts number of bytes of data to be read
+009 01            ONE  CON  $01       ; 1 constant
+00A 90         OPCODE  CON  $90       ; MM opcode value
+00B 00           FAIL  CON  $00       ; If a chacksum failed
+00C 00       CHECKSUM  CON  $00       ; Calculated Checksum
+00D FF        COMPAUX  CON  $FF       ; Auxiliar to calculate 1's complement
+00E 80 0C    READADDR  LD   CHECKSUM  ; Loads checksum.
+010 50 0C              SUB  CHECKSUM  ; Zero.
+012 90 0C              MM   CHECKSUM  ; Reset checksum.      
+014 A0 56              SC   READBYTE  ; Reads first address byte from file
+016 40 0A              ADD  OPCODE    ; Adds upper address to opcode
+018 90 2A              MM   WRITE_1   ; Writes result to write_1
+01A 50 0A              SUB  OPCODE    ; Removes opcode
+01C 50 0D              SUB  COMPAUX   ; Compares with FF
+01E 10 54              JZ   EOP       ; If it was equal to FF, terminate program.
+020 A0 56              SC   READBYTE  ; Reads second address byte from file
+022 90 2B              MM   WRITE_2   ; Writes to write_2
+024 A0 56              SC   READBYTE  ; Reads byte count from file
+026 90 08              MM   COUNTER   ; Writes byte count to counter
+028 A0 56        LOOP  SC   READBYTE  ; Reads a byte of data
+02A 90        WRITE_1  CON  $90       ; MM first byte (will be read as instruction)
+02B 00        WRITE_2  CON  $00       ; MM second byte (will be read as instruction)
+02C 80 2B              LD   WRITE_2   ; Loads MM second byte (lower address byte)
+02E 40 09              ADD  ONE       ; write_2 += 1
+030 90 2B              MM   WRITE_2   ; Writes new lower address byte
+032 10 3E              JZ   ADDUPPER  ; if equals zero (overflow) we add one to upper byte.  
+034 80 08     WRITE_3  LD   COUNTER   ; Loads value from counter
+036 50 09              SUB  ONE       ; Counter--
+038 90 08              MM   COUNTER   ; Writes new value of counter
+03A 10 46              JZ   CHECKCHKS ; Compares checksums if counter = 0
+03C 00 28              JP   LOOP      ; Goes back to loop if counter != 0
+03E 80 2A    ADDUPPER  LD   WRITE_1   ; Loads upper MM byte.
+040 40 09              ADD  ONE       ; Write_1++
+042 90 2A              MM   WRITE_1   ; Writes result.
+044 00 34              JP   WRITE_3   ; Continues back to loop
+046 80 0D   CHECKCHKS  LD   COMPAUX   ; Loads $FF
+048 50 0C              SUB  CHECKSUM  ; One's complement to calculate checksum
+04A 90 0C              MM   CHECKSUM  ; Saves computed checksum to memory
+04C D0 00              GD             ; Reads checksum from file
+04E 50 0C              SUB  CHECKSUM  ; Compares both checksums
+050 10 0E              JZ   READADDR  ; If they are different, we continue and read next address.
+052 90 0B              MM   FAIL      ; If they are differetn, we raise error flag and terminate program.
+054 C0 0E         EOP  HM   READADDR  ; Halts machine.
+056 00 00    READBYTE  JP   $000      ; Return address.
+058 D0 00              GD             ; Reads a byte of data.     
+05A 90 64              MM   DATA      ; Saves read byte.
+05C 40 0C              ADD  CHECKSUM  ; Adds to checksum.
+05E 90 0C              MM   CHECKSUM  ; Saves results to checksum variable.
+060 80 64              LD   DATA      ; Recovers data that was read.
+062 B0 56              RS   READBYTE  ; Returns from soubroutine.
+064 00           DATA  CON  $00       ; Data that was read.

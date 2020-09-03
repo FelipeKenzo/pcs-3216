@@ -1,4 +1,0 @@
-v 4
-file . "a.vhd" "0edbf55459056c84a03721ba26341a60f57bcfb2" "20200708010651.937":
-  entity resto at 1( 0) + 0 on 11;
-  architecture calcresto of resto at 14( 277) + 0 on 12;

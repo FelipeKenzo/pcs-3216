@@ -29,4 +29,6 @@ std::string eraseSubStr(const std::string& mainStr, const std::string &toErase);
 // Calculates cheksum
 uint16_t calculateChecksum(uint16_t addr, uint16_t size, std::vector<uint8_t> data);
 
+void GotoLine(std::ifstream* file, unsigned int num);
+
 #endif

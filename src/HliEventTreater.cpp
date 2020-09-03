@@ -79,7 +79,6 @@ void HliEventTreater::t7() { // sequence operand
         destination += t.sequence + " ";
     }
     if (t.type == integer) {
-        // std::cout << "Empilhou " << t.sequence << "\n";
         (*operandsTobeUsed).push(std::stoi(t.sequence));
     }
     else {
@@ -139,7 +138,6 @@ void HliEventTreater::t9() { // Analyze operator
             (*operatorsAnalyzed).top() != "/")) {
             t8();
         }
-        // std::cout << "Empilhou +\n";
         (*operatorsAnalyzed).push("+");
     }
     else if (newOp == "-") {
@@ -149,7 +147,6 @@ void HliEventTreater::t9() { // Analyze operator
 
             t8();
         }
-        std::cout << "Empilhou -";
         (*operatorsAnalyzed).push("-");
     }
     else if (newOp == "*") {

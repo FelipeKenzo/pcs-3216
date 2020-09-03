@@ -12,17 +12,12 @@
 
 int main (int argc, char* argv[]) {
     
-    // Interface* i = new Interface();
-    // i->input();
     std::string script;
 
     if (argc > 1) {
         script = argv[1];
         CommandLineInterpreter* cli = new CommandLineInterpreter(script);
         cli->executeScript();
-
-        // HighLevelInterpreter* hli = new HighLevelInterpreter(script);
-        // hli->executeScript();
     }
     else {
         std::cerr << "Missing script file.\n";

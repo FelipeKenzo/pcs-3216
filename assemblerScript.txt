@@ -1,0 +1,6 @@
+$JOB kenzo;           // Inicia job
+$DISK filesystem;     // Aponta pasta do disco
+$OUTFILE loader.vnc; // Utiliza o arquivo como saída
+$DISKFILE loader.asm
+$RUN assembler
+$ENDJOB kenzo

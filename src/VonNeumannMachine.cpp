@@ -24,9 +24,9 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
     if(debug) {
         std::cout << "---------------------------\n"
                   << "$" << std::right << std::setfill('0') 
-                  << std::setw(3) << std::hex << pc-2 << "  "
-                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 2] << " "
-                  << std::setw(2) << std::hex << (uint16_t)mem[pc - 1] << "        ";
+                  << std::setw(3) << std::hex << pc + of -2 << "  "
+                  << std::setw(2) << std::hex << (uint16_t)mem[pc + of - 2] << " "
+                  << std::setw(2) << std::hex << (uint16_t)mem[pc + of - 1] << "        ";
     }
 
     switch(op) {
@@ -94,7 +94,13 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
             break;
         case OS:
             if (debug) std::cout << "OS  ";
-            std::cout << "System call not implemented.\n";
+            if (pa == 0) { // Load Overlay
+                loadOverlay(memRead_b(pc+of), memRead_w(pc+of+1));
+            }
+            else if (pa == 1) {
+                endOverlay();
+            }
+            else std::cout << "System call not implemented.\n";
             break;
             
     }
@@ -103,9 +109,11 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
         std::cout << std::right << std::setfill('0') << std::setw(3) << std::uppercase
                   << std::hex << pa << "\n\n"
                   << "ac: $" << std::right << std::setfill('0') << std::setw(2)
-                  << std::hex << (uint16_t)ac << "    "
+                  << std::hex << (uint16_t)ac << "  "
                   << "pc: $" << std::right << std::setfill('0') << std::setw(3)
-                  << std::hex << pc << "\n"
+                  << std::hex << pc << "  "
+                  << "of: $" << std::right << std::setfill('0') << std::setw(3)
+                  << std::hex << of << "\n"
                   << "---------------------------\n";
     }
 
@@ -113,15 +121,16 @@ void VonNeumannMachine::executeInstruction(uint16_t instr, bool debug) {
 
 void VonNeumannMachine::run() {
     halted = false;
+    of = 0;
 
     while (!halted) {
-        if (pc >= 0xFFF) {
+        if (pc+of >= 0xFFF) {
             std::cerr << "run: invalid memory address (" << std::uppercase << std::hex << pc << ").\n";
             return;
         }
 
         // Fetch instruction
-        uint16_t instr = memRead_w(pc);
+        uint16_t instr = memRead_w(pc+of);
         pc += 2;
 
         executeInstruction(instr, false); 
@@ -135,13 +144,13 @@ void VonNeumannMachine::step() {
     std::string input;
 
     do {
-        if (pc >= 0xFFF) {
+        if (pc+of >= 0xFFF) {
             std::cerr << "step: invalid memory address (" << std::uppercase << std::hex << pc << ").\n";
             return;
         }
 
         // Fetch instruction
-        uint16_t instr = memRead_w(pc);
+        uint16_t instr = memRead_w(pc+of);
         pc += 2;
 
         executeInstruction(instr, true);
@@ -221,7 +230,80 @@ void VonNeumannMachine::writeOutput() {
         return;
     }
 
-    (*output) << std::setfill('0') << std::setw(2)
-              << std::right << std::uppercase << std::hex << (uint)ac;
+    uint16_t ac16 = (uint16_t)ac;
+    (*output) << std::right << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << (uint)ac << "\n";
     (*output).flush();
+}
+
+void VonNeumannMachine::loadOverlay(uint8_t block, uint16_t offset) {
+
+    GotoLine(input, block); // Search for overlay block code
+
+    // Create aux file with corrected addresses
+    std::ofstream auxOut("auxFile");
+    while (true) {
+        // read address
+        uint16_t upper = readInput();
+        if (upper == 0xFF) {
+            auxOut << "FF";
+            break;
+        }
+        uint16_t lower = readInput();
+
+        uint16_t address = (upper << 8) + lower;
+        
+        // correct address
+        address += offset + of;
+
+        // output corrected address to aux file
+        auxOut << std::right << std::setfill('0') <<  std::uppercase
+               << std::setw(4) << std::hex  << address;
+        
+        // read size
+        uint16_t size = readInput();
+        auxOut << std::right << std::setfill('0') <<  std::uppercase
+               << std::setw(2) << std::hex  << size;
+
+        // copy data and checksum to aux
+        std::string data = "";
+        for (int i = 0; i < (size+1)*2; i++) {
+            char c = (*input).get();
+            data.push_back(c);
+        }
+        auxOut << data;
+    }
+    auxOut.close();
+
+    // Change input file to auxFile
+    std::ifstream* savedInput = input;
+    std::ifstream auxIn("auxFile");
+    input = &auxIn;
+    
+    savedAc = ac;
+    returns.push(pc + 3);
+    offsets.push(offset);
+
+    // std::cout << "\nLoading overlay " << (uint)block << "\n";
+    // std::cout << "Offset: " << offset << "\n";
+    pc = 0; // loader
+    uint16_t savedOf = of;
+    this->run();  // run loader
+    
+    pc = 0;
+    of = offset + savedOf;
+    halted = false;
+    
+    auxIn.close();
+    input = savedInput;
+    // std::cout << "\nOverlay loaded\n";
+}
+
+void VonNeumannMachine::endOverlay() {
+    // Remove PC offset
+    of = of - offsets.top();
+    offsets.pop();
+
+    // Return to father node
+    pc = returns.top();
+    returns.pop();
 }

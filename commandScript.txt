@@ -1,8 +1,13 @@
-$JOB kenzo
-$DISK filesystem
-$INFILE input.txt
-$OUTFILE output.txt
-$LIST input.txt
-$RUN highlevelScript.txt
-$LIST output.txt
-$ENDJOB kenzo
+$JOB kenzo;           // Inicia job
+$DISK filesystem;     // Aponta pasta do disco
+$OUTFILE overlay.vnc; // Saída para o Assembler
+$DISKFILE overlay.asm;// Entrada do Assembler
+$RUN assembler;       // Monta o programa
+$LIST overlay.vnc;    // Imprime o arquivo de saída
+$OUTFILE output.txt;  // Saída da MVN
+$DISKFILE overlay.vnc;// Entrada do Loader
+$INFILE overlay.vnc;  // Entrada da MVN
+$RUN loader;          // Carrega o programa
+$RUN vnm;             // Executa o programa
+$LIST output.txt;     // Imprime saída
+$ENDJOB kenzo;        // Finaliza sessão

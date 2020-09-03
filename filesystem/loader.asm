@@ -15,24 +15,23 @@ compAux:    con     $FF         ; Auxiliar to calculate 1's complement
 
 ; //--------Main Program--------//
 
-; Reads base address:
+; Read base address:
 readAddr:   ld      checksum    ; Loads checksum.
             sub     checksum    ; Zero.
             mm      checksum    ; Reset checksum.      
             sc      readByte    ; Reads first address byte from file
             add     opcode      ; Adds upper address to opcode
             mm      write_1     ; Writes result to write_1
+
+;  -- Sees if end of code
+            sub     opcode      ; Removes opcode
+            sub     compAux     ; Compares with FF
+            jz      eop         ; If it was equal to FF, terminate program.
+;  --
             sc      readByte    ; Reads second address byte from file
             mm      write_2     ; Writes to write_2
-
-; If the read address was zero, we end the program:
-            jz      zero1       ; If the last byte was zero, we check the upper byte.
-            jp      readSize    ; Else, we continue to read the size byte.
-zero1:      ld      write_1     ; Loads upper byte (OP + upper address).
-            sub     opcode      ; Removes opcode.
-            jz      eop         ; If it is also zero, we terminate the program.
-
-readSize:   sc      readByte    ; Reads byte count from file
+            
+            sc      readByte    ; Reads byte count from file
             mm      counter     ; Writes byte count to counter
 
 ; Memory writing loop
